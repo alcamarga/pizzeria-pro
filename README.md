@@ -31,10 +31,12 @@ El backend y el frontend son completamente independientes. Se comunican exclusiv
 
 ### Menú
 - Listado de pizzas cargado dinámicamente desde la API (`GET /api/pizzas`)
-- Tabla con nombre, tamaño y precio base formateado en COP
+- Selección dinámica de tamaños (Personal, Mediana, Familiar) con actualización de precio en tiempo real
+- Tabla con nombre, selector de tamaño y precio formateado en COP
 
 ### Carrito de Compras
-- Agregar y eliminar pizzas del pedido en tiempo real
+- Agregar y eliminar pizzas del pedido con la variante de tamaño elegida
+- Resumen muestra "Nombre - Tamaño" (ej: "Hawaiana - Familiar") con precio exacto
 - Gestión de estado reactiva con detección de cambios de Angular
 - Cálculo automático de Subtotal, IVA (19%) y Gran Total
 
@@ -56,6 +58,7 @@ El backend y el frontend son completamente independientes. Se comunican exclusiv
 | Frontend | TypeScript | 5.x (strict) |
 | Frontend | Bootstrap | 5.x |
 | Frontend | HttpClient + RxJS | Angular built-in |
+| Frontend | FormsModule | Angular built-in (binding de selectores) |
 | Testing | Pytest | 8.x |
 
 ---
@@ -76,7 +79,11 @@ El backend y el frontend son completamente independientes. Se comunican exclusiv
       "id": 1,
       "nombre": "Hawaiana",
       "descripcion": "Salsa de tomate, queso mozzarella, jamón y piña",
-      "precioBase": 25000,
+      "variantes": [
+        { "tamano": "Personal", "precio": 20000 },
+        { "tamano": "Mediana",  "precio": 25000 },
+        { "tamano": "Familiar", "precio": 32500 }
+      ],
       "activo": true
     }
   ]
@@ -147,11 +154,17 @@ Resultado esperado: **12 passed** ✅
 ```python
 # models.py — Dataclasses con tipado fuerte
 @dataclass
+class VariantePrecio:
+    tamano: str    # "Personal", "Mediana", "Familiar"
+    precio: float  # Precio en COP para este tamaño
+
+@dataclass
 class Pizza:
     id: int
     nombre: str
     descripcion: str
-    precio_base: float
+    variantes: list[VariantePrecio]  # Lista de tamaños con precio
+    imagen: str | None = None
     activo: bool = True
 
 @dataclass
