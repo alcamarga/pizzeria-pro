@@ -236,3 +236,57 @@ Resultado esperado: **12 passed** ✅
 **Camilo Martinez**  
 Desarrollador Fullstack · Python & Angular · SQL  
 Proyecto desarrollado bajo metodología TDD, arquitectura desacoplada y persistencia relacional con SQLite.
+
+---
+
+## 🚀 Próximos Pasos (Roadmap)
+
+El proyecto tiene una base sólida y production-ready. Estas son las tres evoluciones naturales para llevarlo al siguiente nivel:
+
+---
+
+### 🔐 Autenticación y Perfiles de Usuario
+
+Implementación de un sistema completo de identidad con **JWT (JSON Web Tokens)** para autenticación stateless.
+
+- Registro e inicio de sesión con hash seguro de contraseñas (`bcrypt`)
+- Tokens de acceso y refresh con expiración configurable
+- Perfiles de cliente: historial de pedidos personales, direcciones de entrega guardadas y preferencias
+- Guards en Angular para proteger rutas privadas
+- Middleware de autenticación en Flask para endpoints protegidos
+
+**Stack previsto:** `Flask-JWT-Extended` · `Angular Route Guards` · `LocalStorage / HttpOnly Cookies`
+
+---
+
+### 📊 Panel de Business Intelligence
+
+Dashboard administrativo con visualizaciones interactivas en tiempo real para la toma de decisiones basada en datos.
+
+- Gráfica de barras: **pizzas más vendidas** por período (día / semana / mes)
+- Gráfica de líneas: **horas pico de pedidos** para optimizar la operación
+- Proyecciones de **ingresos mensuales** con tendencia histórica
+- KPIs clave: ticket promedio, tasa de conversión y pedidos por hora
+- Filtros dinámicos por rango de fechas con actualización sin recarga
+
+**Stack previsto:** `Chart.js` o `D3.js` · `Angular standalone components` · `Flask agregaciones SQL`
+
+---
+
+### ⚡ Optimización y Despliegue en la Nube
+
+Dockerización completa del entorno para garantizar portabilidad, reproducibilidad y escalabilidad horizontal.
+
+- `Dockerfile` independiente para Backend (Flask + Gunicorn) y Frontend (Nginx)
+- `docker-compose.yml` que orquesta los tres servicios: Frontend, Backend y base de datos
+- Pipeline CI/CD con **GitHub Actions**: build, test y deploy automático en cada push a `main`
+- Despliegue en **AWS (ECS + RDS)** o **Azure (App Service + Azure SQL)**
+- Variables de entorno gestionadas con `.env` y secretos en el proveedor cloud
+
+**Stack previsto:** `Docker` · `Docker Compose` · `GitHub Actions` · `AWS ECS / Azure App Service`
+
+---
+
+> Proyecto desarrollado con visión de largo plazo: cada decisión de arquitectura tomada hoy
+> (desacoplamiento, tipado fuerte, TDD, ORM relacional) fue pensada para que estas evoluciones
+> sean incrementales, no refactorizaciones desde cero.
