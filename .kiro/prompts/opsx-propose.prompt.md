@@ -1,103 +1,98 @@
 ---
-description: Propose a new change - create it and generate all artifacts in one step
+description: Proponer un nuevo cambio — crear todos los artefactos en un solo paso
 ---
 
-Propose a new change - create the change and generate all artifacts in one step.
+Proponer un nuevo cambio — crear el cambio y generar todos los artefactos en un solo paso.
 
-I'll create a change with artifacts:
-- proposal.md (what & why)
-- design.md (how)
-- tasks.md (implementation steps)
+Crearé un cambio con los siguientes artefactos:
+- proposal.md (qué y por qué)
+- design.md (cómo)
+- tasks.md (pasos de implementación)
 
-When ready to implement, run /opsx:apply
+Cuando estés listo para implementar, ejecuta /opsx:apply
 
 ---
 
-**Input**: The argument after `/opsx:propose` is the change name (kebab-case), OR a description of what the user wants to build.
+**Entrada**: El argumento después de `/opsx:propose` es el nombre del cambio (kebab-case), O una descripción de lo que el usuario quiere construir.
 
-**Steps**
+**Pasos**
 
-1. **If no input provided, ask what they want to build**
+1. **Si no se proporciona entrada clara, preguntar qué quieren construir**
 
-   Use the **AskUserQuestion tool** (open-ended, no preset options) to ask:
-   > "What change do you want to work on? Describe what you want to build or fix."
+   Usa la herramienta **AskUserQuestion** (abierta, sin opciones predefinidas) para preguntar:
+   > "¿Qué cambio quieres trabajar? Describe qué quieres construir o corregir."
 
-   From their description, derive a kebab-case name (e.g., "add user authentication" → `add-user-auth`).
+   De su descripción, deriva un nombre en kebab-case (ej. "agregar autenticación de usuario" → `agregar-auth-usuario`).
 
-   **IMPORTANT**: Do NOT proceed without understanding what the user wants to build.
+   **IMPORTANTE**: NO procedas sin entender qué quiere construir el usuario.
 
-2. **Create the change directory**
+2. **Crear el directorio del cambio**
    ```bash
-   openspec new change "<name>"
+   openspec new change "<nombre>"
    ```
-   This creates a scaffolded change at `openspec/changes/<name>/` with `.openspec.yaml`.
+   Esto crea un cambio estructurado en `openspec/changes/<nombre>/` con `.openspec.yaml`.
 
-3. **Get the artifact build order**
+3. **Obtener el orden de construcción de artefactos**
    ```bash
-   openspec status --change "<name>" --json
+   openspec status --change "<nombre>" --json
    ```
-   Parse the JSON to get:
-   - `applyRequires`: array of artifact IDs needed before implementation (e.g., `["tasks"]`)
-   - `artifacts`: list of all artifacts with their status and dependencies
+   Analiza el JSON para obtener:
+   - `applyRequires`: arreglo de IDs de artefactos necesarios antes de implementar
+   - `artifacts`: lista de todos los artefactos con su estado y dependencias
 
-4. **Create artifacts in sequence until apply-ready**
+4. **Crear artefactos en secuencia hasta estar listo para aplicar**
 
-   Use the **TodoWrite tool** to track progress through the artifacts.
+   Usa la herramienta **TodoWrite** para rastrear el progreso.
 
-   Loop through artifacts in dependency order (artifacts with no pending dependencies first):
+   Itera por los artefactos en orden de dependencias:
 
-   a. **For each artifact that is `ready` (dependencies satisfied)**:
-      - Get instructions:
+   a. **Para cada artefacto en estado `ready`**:
+      - Obtén instrucciones:
         ```bash
-        openspec instructions <artifact-id> --change "<name>" --json
+        openspec instructions <id-artefacto> --change "<nombre>" --json
         ```
-      - The instructions JSON includes:
-        - `context`: Project background (constraints for you - do NOT include in output)
-        - `rules`: Artifact-specific rules (constraints for you - do NOT include in output)
-        - `template`: The structure to use for your output file
-        - `instruction`: Schema-specific guidance for this artifact type
-        - `outputPath`: Where to write the artifact
-        - `dependencies`: Completed artifacts to read for context
-      - Read any completed dependency files for context
-      - Create the artifact file using `template` as the structure
-      - Apply `context` and `rules` as constraints - but do NOT copy them into the file
-      - Show brief progress: "Created <artifact-id>"
+      - El JSON de instrucciones incluye:
+        - `context`: Contexto del proyecto (restricciones para ti — NO incluir en la salida)
+        - `rules`: Reglas específicas del artefacto (restricciones para ti — NO incluir en la salida)
+        - `template`: La estructura a usar para el archivo de salida
+        - `instruction`: Guía específica del esquema para este tipo de artefacto
+        - `outputPath`: Dónde escribir el artefacto
+        - `dependencies`: Artefactos completados para leer como contexto
+      - Lee los archivos de dependencias completados para contexto
+      - Crea el archivo del artefacto usando `template` como estructura
+      - Aplica `context` y `rules` como restricciones — pero NO los copies en el archivo
+      - Muestra progreso breve: "Creado <id-artefacto>"
 
-   b. **Continue until all `applyRequires` artifacts are complete**
-      - After creating each artifact, re-run `openspec status --change "<name>" --json`
-      - Check if every artifact ID in `applyRequires` has `status: "done"` in the artifacts array
-      - Stop when all `applyRequires` artifacts are done
+   b. **Continúa hasta que todos los artefactos en `applyRequires` estén completos**
 
-   c. **If an artifact requires user input** (unclear context):
-      - Use **AskUserQuestion tool** to clarify
-      - Then continue with creation
+   c. **Si un artefacto requiere entrada del usuario** (contexto poco claro):
+      - Usa la herramienta **AskUserQuestion** para aclarar
+      - Luego continúa con la creación
 
-5. **Show final status**
+5. **Mostrar estado final**
    ```bash
-   openspec status --change "<name>"
+   openspec status --change "<nombre>"
    ```
 
-**Output**
+**Salida**
 
-After completing all artifacts, summarize:
-- Change name and location
-- List of artifacts created with brief descriptions
-- What's ready: "All artifacts created! Ready for implementation."
-- Prompt: "Run `/opsx:apply` to start implementing."
+Después de completar todos los artefactos, resume:
+- Nombre del cambio y ubicación
+- Lista de artefactos creados con descripciones breves
+- Estado: "¡Todos los artefactos creados! Listo para implementar."
+- Indicación: "Ejecuta `/opsx:apply` para comenzar la implementación."
 
-**Artifact Creation Guidelines**
+**Pautas de Creación de Artefactos**
 
-- Follow the `instruction` field from `openspec instructions` for each artifact type
-- The schema defines what each artifact should contain - follow it
-- Read dependency artifacts for context before creating new ones
-- Use `template` as the structure for your output file - fill in its sections
-- **IMPORTANT**: `context` and `rules` are constraints for YOU, not content for the file
-  - Do NOT copy `<context>`, `<rules>`, `<project_context>` blocks into the artifact
-  - These guide what you write, but should never appear in the output
+- Sigue el campo `instruction` de `openspec instructions` para cada tipo de artefacto
+- El esquema define qué debe contener cada artefacto — síguelo
+- Lee los artefactos de dependencia antes de crear nuevos
+- Usa `template` como estructura para el archivo de salida — completa sus secciones
+- **IMPORTANTE**: `context` y `rules` son restricciones PARA TI, no contenido para el archivo
 
-**Guardrails**
-- Create ALL artifacts needed for implementation (as defined by schema's `apply.requires`)
-- Always read dependency artifacts before creating a new one
-- If context is critically unclear, ask the user - but prefer making reasonable decisions to keep momentum
-- If a change with that name already exists, ask if user wants to continue it or create a new one
-- Verify each artifact file exists after writing before proceeding to next
+**Restricciones**
+- Crea TODOS los artefactos necesarios para la implementación
+- Siempre lee los artefactos de dependencia antes de crear uno nuevo
+- Si el contexto no está claro, pregunta al usuario — pero prefiere tomar decisiones razonables para mantener el impulso
+- Si ya existe un cambio con ese nombre, pregunta si el usuario quiere continuarlo o crear uno nuevo
+- Verifica que cada archivo de artefacto existe después de escribirlo antes de proceder al siguiente

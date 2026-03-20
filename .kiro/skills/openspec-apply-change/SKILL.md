@@ -1,156 +1,115 @@
 ---
 name: openspec-apply-change
-description: Implement tasks from an OpenSpec change. Use when the user wants to start implementing, continue implementation, or work through tasks.
+description: Implementar tareas de un cambio OpenSpec. Usar cuando el usuario quiere comenzar a implementar, continuar la implementación o trabajar a través de las tareas.
 license: MIT
-compatibility: Requires openspec CLI.
+compatibility: Requiere CLI de openspec.
 metadata:
-  author: openspec
-  version: "1.0"
-  generatedBy: "1.2.0"
+  author: Camilo Martinez
+  version: "2.0"
+  language: es-ES
+  stack: Angular 19 / Python 3.14
 ---
 
-Implement tasks from an OpenSpec change.
+Implementar las tareas de un cambio OpenSpec siguiendo los estándares de Camilo Martinez:
+- Tipado fuerte obligatorio (Python type hints + TypeScript strict)
+- Código y comentarios en español
+- Nombres de archivos en inglés
+- Arquitectura limpia y desacoplada
 
-**Input**: Optionally specify a change name. If omitted, check if it can be inferred from conversation context. If vague or ambiguous you MUST prompt for available changes.
+**Entrada**: Opcionalmente especifica un nombre de cambio. Si se omite, infiere del contexto. Si es ambiguo, DEBES solicitar los cambios disponibles.
 
-**Steps**
+**Pasos**
 
-1. **Select the change**
+1. **Seleccionar el cambio**
 
-   If a name is provided, use it. Otherwise:
-   - Infer from conversation context if the user mentioned a change
-   - Auto-select if only one active change exists
-   - If ambiguous, run `openspec list --json` to get available changes and use the **AskUserQuestion tool** to let the user select
+   Si se proporciona un nombre, úsalo. De lo contrario:
+   - Infiere del contexto de la conversación
+   - Selecciona automáticamente si solo existe un cambio activo
+   - Si es ambiguo, ejecuta `openspec list --json` y usa **AskUserQuestion** para que el usuario seleccione
 
-   Always announce: "Using change: <name>" and how to override (e.g., `/opsx:apply <other>`).
+   Anuncia siempre: "Usando cambio: <nombre>"
 
-2. **Check status to understand the schema**
+2. **Verificar estado del esquema**
    ```bash
-   openspec status --change "<name>" --json
-   ```
-   Parse the JSON to understand:
-   - `schemaName`: The workflow being used (e.g., "spec-driven")
-   - Which artifact contains the tasks (typically "tasks" for spec-driven, check status for others)
-
-3. **Get apply instructions**
-
-   ```bash
-   openspec instructions apply --change "<name>" --json
+   openspec status --change "<nombre>" --json
    ```
 
-   This returns:
-   - Context file paths (varies by schema - could be proposal/specs/design/tasks or spec/tests/implementation/docs)
-   - Progress (total, complete, remaining)
-   - Task list with status
-   - Dynamic instruction based on current state
+3. **Obtener instrucciones de aplicación**
+   ```bash
+   openspec instructions apply --change "<nombre>" --json
+   ```
 
-   **Handle states:**
-   - If `state: "blocked"` (missing artifacts): show message, suggest using openspec-continue-change
-   - If `state: "all_done"`: congratulate, suggest archive
-   - Otherwise: proceed to implementation
+   **Manejo de estados:**
+   - `state: "blocked"`: muestra mensaje, sugiere usar openspec-continue-change
+   - `state: "all_done"`: felicita, sugiere archivar
+   - De lo contrario: procede a la implementación
 
-4. **Read context files**
+4. **Leer archivos de contexto**
 
-   Read the files listed in `contextFiles` from the apply instructions output.
-   The files depend on the schema being used:
-   - **spec-driven**: proposal, specs, design, tasks
-   - Other schemas: follow the contextFiles from CLI output
+   Lee los archivos listados en `contextFiles` de la salida de instrucciones.
 
-5. **Show current progress**
+5. **Mostrar progreso actual**
 
-   Display:
-   - Schema being used
-   - Progress: "N/M tasks complete"
-   - Remaining tasks overview
-   - Dynamic instruction from CLI
+   - Esquema en uso
+   - Progreso: "N/M tareas completadas"
+   - Resumen de tareas restantes
 
-6. **Implement tasks (loop until done or blocked)**
+6. **Implementar tareas (bucle hasta completar o bloquearse)**
 
-   For each pending task:
-   - Show which task is being worked on
-   - Make the code changes required
-   - Keep changes minimal and focused
-   - Mark task complete in the tasks file: `- [ ]` → `- [x]`
-   - Continue to next task
+   Para cada tarea pendiente:
+   - Muestra en qué tarea se trabaja
+   - Realiza los cambios de código necesarios con tipado fuerte
+   - Mantén los cambios mínimos y enfocados
+   - Marca la tarea como completada: `- [ ]` → `- [x]`
+   - Continúa con la siguiente tarea
 
-   **Pause if:**
-   - Task is unclear → ask for clarification
-   - Implementation reveals a design issue → suggest updating artifacts
-   - Error or blocker encountered → report and wait for guidance
-   - User interrupts
+   **Pausa si:**
+   - La tarea no es clara → pide aclaración
+   - La implementación revela un problema de diseño → sugiere actualizar artefactos
+   - Se encuentra un error o bloqueo → reporta y espera orientación
 
-7. **On completion or pause, show status**
+7. **Al completar o pausar, muestra el estado**
 
-   Display:
-   - Tasks completed this session
-   - Overall progress: "N/M tasks complete"
-   - If all done: suggest archive
-   - If paused: explain why and wait for guidance
-
-**Output During Implementation**
+**Salida Durante la Implementación**
 
 ```
-## Implementing: <change-name> (schema: <schema-name>)
+## Implementando: <nombre-cambio> (esquema: <nombre-esquema>)
 
-Working on task 3/7: <task description>
-[...implementation happening...]
-✓ Task complete
-
-Working on task 4/7: <task description>
-[...implementation happening...]
-✓ Task complete
+Trabajando en tarea 3/7: <descripción>
+[...implementación en curso...]
+✓ Tarea completada
 ```
 
-**Output On Completion**
+**Salida al Completar**
 
 ```
-## Implementation Complete
+## Implementación Completa
 
-**Change:** <change-name>
-**Schema:** <schema-name>
-**Progress:** 7/7 tasks complete ✓
+**Cambio:** <nombre-cambio>
+**Esquema:** <nombre-esquema>
+**Progreso:** 7/7 tareas completadas ✓
 
-### Completed This Session
-- [x] Task 1
-- [x] Task 2
-...
-
-All tasks complete! Ready to archive this change.
+¡Todas las tareas completadas! Puedes archivar con `/opsx:archive`.
 ```
 
-**Output On Pause (Issue Encountered)**
+**Salida al Pausar**
 
 ```
-## Implementation Paused
+## Implementación Pausada
 
-**Change:** <change-name>
-**Schema:** <schema-name>
-**Progress:** 4/7 tasks complete
+**Cambio:** <nombre-cambio>
+**Progreso:** 4/7 tareas completadas
 
-### Issue Encountered
-<description of the issue>
+### Problema Encontrado
+<descripción del problema>
 
-**Options:**
-1. <option 1>
-2. <option 2>
-3. Other approach
-
-What would you like to do?
+¿Qué deseas hacer?
 ```
 
-**Guardrails**
-- Keep going through tasks until done or blocked
-- Always read context files before starting (from the apply instructions output)
-- If task is ambiguous, pause and ask before implementing
-- If implementation reveals issues, pause and suggest artifact updates
-- Keep code changes minimal and scoped to each task
-- Update task checkbox immediately after completing each task
-- Pause on errors, blockers, or unclear requirements - don't guess
-- Use contextFiles from CLI output, don't assume specific file names
-
-**Fluid Workflow Integration**
-
-This skill supports the "actions on a change" model:
-
-- **Can be invoked anytime**: Before all artifacts are done (if tasks exist), after partial implementation, interleaved with other actions
-- **Allows artifact updates**: If implementation reveals design issues, suggest updating artifacts - not phase-locked, work fluidly
+**Restricciones**
+- Continúa con las tareas hasta completarlas o bloquearte
+- Siempre lee los archivos de contexto antes de comenzar
+- Si una tarea es ambigua, pausa y pregunta antes de implementar
+- Mantén los cambios de código mínimos y acotados a cada tarea
+- Actualiza el checkbox inmediatamente después de completar cada tarea
+- Pausa ante errores o requisitos poco claros — no adivines
