@@ -1,4 +1,4 @@
-// Componente para mostrar el menú y gestionar el pedido con variantes de tamaño.
+// Componente para mostrar el menú y gestionar el carrito con cantidades.
 // Autor: Camilo Martinez
 // Fecha: 20/03/2026
 
@@ -11,10 +11,11 @@ import { Pizza, VariantePrecio } from '../../models/pizza';
 // Tasa de IVA aplicada en Colombia
 const IVA: number = 0.19;
 
-// Item del carrito: pizza + variante seleccionada por el usuario
+// Item del carrito: pizza + variante + cantidad
 interface ItemCarrito {
   pizza: Pizza;
   variante: VariantePrecio;
+  cantidad: number;
 }
 
 @Component({
@@ -29,7 +30,9 @@ export class PizzaListComponent implements OnInit {
   pizzas: Pizza[] = [];
   // Variante seleccionada por pizza (clave: pizza.id)
   variantesSeleccionadas: Record<number, VariantePrecio> = {};
-  // Items del carrito con pizza y variante elegida
+  // Cantidad seleccionada por pizza antes de agregar (clave: pizza.id)
+  cantidadesSeleccionadas: Record<number, number> = {};
+  // Items del carrito
   carrito: ItemCarrito[] = [];
   // Gran total con IVA incluido
   total: number = 0;
@@ -40,16 +43,16 @@ export class PizzaListComponent implements OnInit {
 
   constructor(private pizzaService: PizzaService, private cdr: ChangeDetectorRef) {}
 
-  // Carga las pizzas del backend e inicializa la variante por defecto de cada una
+  // Carga las pizzas e inicializa variante y cantidad por defecto para cada una
   ngOnInit(): void {
     this.pizzaService.obtenerPizzas().subscribe({
       next: (pizzas: Pizza[]) => {
         this.pizzas = pizzas;
-        // Inicializar cada pizza con su primera variante seleccionada
         pizzas.forEach(p => {
           if (p.variantes.length > 0) {
             this.variantesSeleccionadas[p.id] = p.variantes[0];
           }
+          this.cantidadesSeleccionadas[p.id] = 1;
         });
         this.cargando = false;
         this.cdr.detectChanges();
@@ -73,11 +76,40 @@ export class PizzaListComponent implements OnInit {
     }
   }
 
-  // Agrega al carrito la pizza con la variante actualmente seleccionada
+  // Calcula el subtotal de la fila (cantidad x precio de la variante seleccionada)
+  calcularSubtotalFila(pizzaId: number): number {
+    const variante: VariantePrecio = this.variantesSeleccionadas[pizzaId];
+    const cantidad: number = this.cantidadesSeleccionadas[pizzaId] ?? 1;
+    if (!variante) return 0;
+    return variante.precio * cantidad;
+  }
+
+  // Agrega al carrito con la variante y cantidad seleccionadas.
+  // Si ya existe el mismo producto (pizza + tamaño), incrementa la cantidad.
   agregarAlCarrito(pizza: Pizza): void {
     const variante: VariantePrecio = this.variantesSeleccionadas[pizza.id];
-    if (!variante) return;
-    this.carrito = [...this.carrito, { pizza, variante }];
+    const cantidad: number = this.cantidadesSeleccionadas[pizza.id] ?? 1;
+    if (!variante || cantidad < 1) return;
+
+    // Buscar si ya existe el mismo producto en el carrito
+    const indiceExistente: number = this.carrito.findIndex(
+      item => item.pizza.id === pizza.id && item.variante.tamano === variante.tamano
+    );
+
+    if (indiceExistente >= 0) {
+      // Incrementar cantidad del item existente
+      this.carrito = this.carrito.map((item, i) =>
+        i === indiceExistente
+          ? { ...item, cantidad: item.cantidad + cantidad }
+          : item
+      );
+    } else {
+      // Agregar nuevo item al carrito
+      this.carrito = [...this.carrito, { pizza, variante, cantidad }];
+    }
+
+    // Resetear cantidad del selector a 1
+    this.cantidadesSeleccionadas[pizza.id] = 1;
     this.recalcularTotal();
   }
 
@@ -89,7 +121,9 @@ export class PizzaListComponent implements OnInit {
 
   // Recalcula el total del carrito con IVA
   private recalcularTotal(): void {
-    const subtotal: number = this.carrito.reduce((acc, item) => acc + item.variante.precio, 0);
+    const subtotal: number = this.carrito.reduce(
+      (acc, item) => acc + item.variante.precio * item.cantidad, 0
+    );
     this.total = subtotal * (1 + IVA);
   }
 
@@ -97,7 +131,6 @@ export class PizzaListComponent implements OnInit {
   finalizarPedido(): void {
     if (this.carrito.length === 0) return;
     this.enviando = true;
-    // Construir payload con pizzas y variantes seleccionadas
     const pizzasPayload: Pizza[] = this.carrito.map(item => item.pizza);
     this.pizzaService.enviarPedido(pizzasPayload, this.total).subscribe({
       next: () => {

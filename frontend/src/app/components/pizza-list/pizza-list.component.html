@@ -1,4 +1,4 @@
-<!-- Vista para mostrar el menú con selector de tamaño y resumen de compra -->
+<!-- Vista para mostrar el menú con cantidades y resumen de compra -->
 <!-- Autor: Camilo Martinez -->
 <!-- Fecha: 20/03/2026 -->
 
@@ -16,36 +16,46 @@
     <p class="mt-2">Cargando menú...</p>
   </div>
 
-  <!-- Tabla de pizzas con selector de variante -->
+  <!-- Tabla de pizzas con selector de variante y cantidad -->
   <div *ngIf="!cargando && !error" class="table-responsive">
     <table class="table table-striped table-hover align-middle">
       <thead class="table-dark">
         <tr>
           <th>Nombre</th>
           <th>Tamaño</th>
-          <th class="text-end">Precio</th>
+          <th class="text-center">Cantidad</th>
+          <th class="text-end">Precio unit.</th>
+          <th class="text-end">Subtotal</th>
           <th class="text-center">Acción</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let pizza of pizzas">
-          <td><strong>{{ pizza.nombre }}</strong><br>
+          <td>
+            <strong>{{ pizza.nombre }}</strong><br>
             <small class="text-muted">{{ pizza.descripcion }}</small>
           </td>
           <td>
-            <!-- Selector de variante de tamaño -->
             <select
               class="form-select form-select-sm"
               (change)="cambiarVariante(pizza.id, $any($event.target).value)">
-              <option
-                *ngFor="let variante of pizza.variantes"
-                [value]="variante.tamano">
+              <option *ngFor="let variante of pizza.variantes" [value]="variante.tamano">
                 {{ variante.tamano }}
               </option>
             </select>
           </td>
-          <td class="text-end fw-bold">
+          <td class="text-center" style="width: 100px;">
+            <input
+              type="number"
+              class="form-control form-control-sm text-center"
+              min="1"
+              [(ngModel)]="cantidadesSeleccionadas[pizza.id]">
+          </td>
+          <td class="text-end">
             {{ formatearMoneda(variantesSeleccionadas[pizza.id]?.precio ?? 0) }}
+          </td>
+          <td class="text-end fw-bold text-success">
+            {{ formatearMoneda(calcularSubtotalFila(pizza.id)) }}
           </td>
           <td class="text-center">
             <button class="btn btn-sm btn-primary" (click)="agregarAlCarrito(pizza)">
@@ -68,7 +78,9 @@
           <tr>
             <th>#</th>
             <th>Pizza</th>
-            <th class="text-end">Precio</th>
+            <th class="text-center">Cant.</th>
+            <th class="text-end">Precio unit.</th>
+            <th class="text-end">Subtotal</th>
             <th class="text-center">Quitar</th>
           </tr>
         </thead>
@@ -76,7 +88,11 @@
           <tr *ngFor="let item of carrito; let i = index">
             <td>{{ i + 1 }}</td>
             <td>{{ item.pizza.nombre }} - {{ item.variante.tamano }}</td>
+            <td class="text-center">
+              <span class="badge bg-primary">{{ item.cantidad }}</span>
+            </td>
             <td class="text-end">{{ formatearMoneda(item.variante.precio) }}</td>
+            <td class="text-end fw-bold">{{ formatearMoneda(item.variante.precio * item.cantidad) }}</td>
             <td class="text-center">
               <button class="btn btn-sm btn-outline-danger" (click)="eliminarDelCarrito(i)">✕</button>
             </td>
