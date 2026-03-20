@@ -1,0 +1,13 @@
+/* Estilos para el componente App */
+/* Autor: Camilo Martinez */
+/* Fecha: 19/03/2026 */
+
+.app-container {
+  min-height: 100vh;
+  background-color: #f7f7f9;
+}
+
+.navbar-brand {
+  font-weight: 700;
+  font-size: 1.5rem;
+}

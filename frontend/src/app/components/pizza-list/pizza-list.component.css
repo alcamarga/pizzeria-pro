@@ -1,0 +1,46 @@
+/* Estilos para el componente PizzaListComponent */
+/* Autor: Camilo Martinez */
+/* Fecha: 19/03/2026 */
+
+.container {
+  max-width: 900px;
+}
+
+.table {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.table thead th {
+  background-color: #1e3a5f;
+  color: #ffffff;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+}
+
+.table tbody tr:hover {
+  background-color: #f8f9fa;
+  cursor: pointer;
+}
+
+.table td {
+  vertical-align: middle;
+}
+
+.badge {
+  font-size: 0.85rem;
+  padding: 0.35em 0.65em;
+}
+
+.btn-primary {
+  background-color: #2563eb;
+  border-color: #2563eb;
+}
+
+.btn-primary:hover {
+  background-color: #1d4ed8;
+  border-color: #1d4ed8;
+}
