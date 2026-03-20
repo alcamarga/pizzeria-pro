@@ -52,7 +52,11 @@ def obtener_pizzas():
             "id": 1,
             "nombre": "Hawaiana",
             "descripcion": "Salsa de tomate, queso mozzarella, jamón y piña",
-            "precioBase": 25000,
+            "variantes": [
+                {"tamano": "Personal", "precio": 20000},
+                {"tamano": "Mediana",  "precio": 25000},
+                {"tamano": "Familiar", "precio": 32500}
+            ],
             "imagen": "/images/hawaina.png",
             "activo": True
         },
@@ -60,7 +64,11 @@ def obtener_pizzas():
             "id": 2,
             "nombre": "Pepperoni",
             "descripcion": "Salsa de tomate, queso mozzarella y pepperoni",
-            "precioBase": 28000,
+            "variantes": [
+                {"tamano": "Personal", "precio": 22000},
+                {"tamano": "Mediana",  "precio": 28000},
+                {"tamano": "Familiar", "precio": 36400}
+            ],
             "imagen": "/images/pepperoni.png",
             "activo": True
         },
@@ -68,7 +76,11 @@ def obtener_pizzas():
             "id": 3,
             "nombre": "Vegetariana",
             "descripcion": "Salsa de tomate, queso mozzarella, champiñones, pimientos y cebolla",
-            "precioBase": 27000,
+            "variantes": [
+                {"tamano": "Personal", "precio": 21000},
+                {"tamano": "Mediana",  "precio": 27000},
+                {"tamano": "Familiar", "precio": 35100}
+            ],
             "imagen": "/images/vegetariana.png",
             "activo": True
         }

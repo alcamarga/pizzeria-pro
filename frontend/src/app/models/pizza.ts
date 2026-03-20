@@ -1,25 +1,19 @@
-// Interfaz para representar una Pizza en el sistema.
-// Esta interfaz define la estructura de datos para una pizza
-// del menú de la pizzería, siguiendo el modelo de Python.
+// Interfaces para el modelo Pizza con variantes de precio por tamaño.
 // Autor: Camilo Martinez
-// Fecha: 19/03/2026
+// Fecha: 20/03/2026
 
+// Variante de precio según el tamaño de la pizza
+export interface VariantePrecio {
+  tamano: string;
+  precio: number;
+}
+
+// Modelo principal de pizza con lista de variantes
 export interface Pizza {
-  // Identificador único de la pizza
   id: number;
-  
-  // Nombre de la pizza (ej. "Hawaiana", "Pepperoni")
   nombre: string;
-  
-  // Descripción de ingredientes
   descripcion: string;
-  
-  // Precio base de la pizza (tamaño mediana)
-  precioBase: number;
-  
-  // URL o ruta de la imagen (opcional)
+  variantes: VariantePrecio[];
   imagen?: string;
-  
-  // Si la pizza está disponible para pedidos
   activo: boolean;
 }

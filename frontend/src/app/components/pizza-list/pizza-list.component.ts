@@ -1,58 +1,56 @@
-// Componente para mostrar la lista de pizzas y gestionar el pedido.
-// Permite agregar pizzas al carrito y calcula el total con IVA del 19%.
+// Componente para mostrar el menú y gestionar el pedido con variantes de tamaño.
 // Autor: Camilo Martinez
-// Fecha: 19/03/2026
+// Fecha: 20/03/2026
 
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { PizzaService } from '../../services/pizza.service';
-import { Pizza } from '../../models/pizza';
+import { Pizza, VariantePrecio } from '../../models/pizza';
 
 // Tasa de IVA aplicada en Colombia
 const IVA: number = 0.19;
 
-// Interfaz para representar una pizza en la tabla del menú
-interface PizzaConTamano {
-  nombre: string;
-  tamano: string;
-  precio: number;
-  // Referencia a la pizza original para agregar al pedido
-  pizzaOriginal: Pizza;
+// Item del carrito: pizza + variante seleccionada por el usuario
+interface ItemCarrito {
+  pizza: Pizza;
+  variante: VariantePrecio;
 }
 
 @Component({
   selector: 'app-pizza-list',
   templateUrl: './pizza-list.component.html',
   styleUrls: ['./pizza-list.component.css'],
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   standalone: true
 })
 export class PizzaListComponent implements OnInit {
   // Lista de pizzas del menú
-  pizzas: PizzaConTamano[] = [];
-  // Pizzas agregadas al pedido actual
-  pedido: Pizza[] = [];
+  pizzas: Pizza[] = [];
+  // Variante seleccionada por pizza (clave: pizza.id)
+  variantesSeleccionadas: Record<number, VariantePrecio> = {};
+  // Items del carrito con pizza y variante elegida
+  carrito: ItemCarrito[] = [];
   // Gran total con IVA incluido
   total: number = 0;
   cargando: boolean = true;
   error: string | null = null;
-  // Estado del envío del pedido
   enviando: boolean = false;
   pedidoConfirmado: boolean = false;
 
   constructor(private pizzaService: PizzaService, private cdr: ChangeDetectorRef) {}
 
-  // Obtiene las pizzas del backend al inicializar el componente
+  // Carga las pizzas del backend e inicializa la variante por defecto de cada una
   ngOnInit(): void {
     this.pizzaService.obtenerPizzas().subscribe({
       next: (pizzas: Pizza[]) => {
-        console.log('Datos recibidos:', pizzas);
-        this.pizzas = pizzas.map(p => ({
-          nombre: p.nombre,
-          tamano: 'Mediana',
-          precio: p.precioBase,
-          pizzaOriginal: p
-        }));
+        this.pizzas = pizzas;
+        // Inicializar cada pizza con su primera variante seleccionada
+        pizzas.forEach(p => {
+          if (p.variantes.length > 0) {
+            this.variantesSeleccionadas[p.id] = p.variantes[0];
+          }
+        });
         this.cargando = false;
         this.cdr.detectChanges();
       },
@@ -65,32 +63,49 @@ export class PizzaListComponent implements OnInit {
     });
   }
 
-  // Agrega una pizza al pedido y recalcula el total con IVA
-  agregarAlPedido(pizza: Pizza): void {
-    this.pedido = [...this.pedido, pizza];
-    const subtotal: number = this.pedido.reduce((acc, p) => acc + p.precioBase, 0);
-    this.total = subtotal * (1 + IVA);
+  // Actualiza la variante seleccionada cuando el usuario cambia el <select>
+  cambiarVariante(pizzaId: number, tamano: string): void {
+    const pizza: Pizza | undefined = this.pizzas.find(p => p.id === pizzaId);
+    if (!pizza) return;
+    const variante: VariantePrecio | undefined = pizza.variantes.find(v => v.tamano === tamano);
+    if (variante) {
+      this.variantesSeleccionadas[pizzaId] = variante;
+    }
   }
 
-  // Elimina una pizza del pedido por su índice
-  eliminarDelPedido(indice: number): void {
-    this.pedido = this.pedido.filter((_, i) => i !== indice);
-    const subtotal: number = this.pedido.reduce((acc, p) => acc + p.precioBase, 0);
+  // Agrega al carrito la pizza con la variante actualmente seleccionada
+  agregarAlCarrito(pizza: Pizza): void {
+    const variante: VariantePrecio = this.variantesSeleccionadas[pizza.id];
+    if (!variante) return;
+    this.carrito = [...this.carrito, { pizza, variante }];
+    this.recalcularTotal();
+  }
+
+  // Elimina un item del carrito por su índice
+  eliminarDelCarrito(indice: number): void {
+    this.carrito = this.carrito.filter((_, i) => i !== indice);
+    this.recalcularTotal();
+  }
+
+  // Recalcula el total del carrito con IVA
+  private recalcularTotal(): void {
+    const subtotal: number = this.carrito.reduce((acc, item) => acc + item.variante.precio, 0);
     this.total = subtotal * (1 + IVA);
   }
 
   // Envía el pedido al backend y limpia el carrito al confirmar
   finalizarPedido(): void {
-    if (this.pedido.length === 0) return;
+    if (this.carrito.length === 0) return;
     this.enviando = true;
-    this.pizzaService.enviarPedido(this.pedido, this.total).subscribe({
+    // Construir payload con pizzas y variantes seleccionadas
+    const pizzasPayload: Pizza[] = this.carrito.map(item => item.pizza);
+    this.pizzaService.enviarPedido(pizzasPayload, this.total).subscribe({
       next: () => {
         this.pedidoConfirmado = true;
-        this.pedido = [];
+        this.carrito = [];
         this.total = 0;
         this.enviando = false;
         this.cdr.detectChanges();
-        // Ocultar el mensaje de confirmación después de 4 segundos
         setTimeout(() => {
           this.pedidoConfirmado = false;
           this.cdr.detectChanges();

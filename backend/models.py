@@ -1,17 +1,30 @@
 ## Creado por: Camilo Martinez
 ## Fecha: 19/03/2026
-## Version: 1.0
+## Version: 2.0
 """Modelos de datos para la Pizzería Pro.
 
 Este módulo define las clases principales del dominio:
-- Pizza: Representa una pizza con sus atributos
+- VariantePrecio: Representa un tamaño con su precio
+- Pizza: Representa una pizza con sus variantes de precio
 - Tamaño: Representa un tamaño de pizza (Personal, Mediana, Familiar)
 - Cliente: Representa un cliente que hace un pedido
 - Pedido: Representa un pedido completo
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
+
+
+@dataclass
+class VariantePrecio:
+    """Variante de precio para una pizza según su tamaño.
+
+    Attributes:
+        tamano: Nombre del tamaño ("Personal", "Mediana", "Familiar")
+        precio: Precio para este tamaño en COP
+    """
+    tamano: str
+    precio: float
 
 
 @dataclass
@@ -22,14 +35,14 @@ class Pizza:
         id: Identificador único de la pizza
         nombre: Nombre de la pizza (ej. "Hawaiana", "Pepperoni")
         descripcion: Descripción de ingredientes
-        precio_base: Precio base de la pizza (tamaño mediana)
+        variantes: Lista de variantes de precio por tamaño
         imagen: URL o ruta de la imagen (opcional)
         activo: Si la pizza está disponible para pedidos
     """
     id: int
     nombre: str
     descripcion: str
-    precio_base: float
+    variantes: list[VariantePrecio] = field(default_factory=list)
     imagen: str | None = None
     activo: bool = True
 
