@@ -14,13 +14,12 @@ Aplicación fullstack desacoplada para gestión de pedidos de pizzería. Backend
 Pizzería Pro
 ├── backend/          → API REST (Flask · Python 3.14)
 │   ├── app.py        → Endpoints + CORS
-│   └── requirements.txt
+│   └── models.py     → Dataclasses Python (Pizza, Pedido, Cliente)
 ├── frontend/         → SPA (Angular 19 · Standalone)
 │   └── src/app/
 │       ├── models/   → Interfaces TypeScript
 │       ├── services/ → HttpClient + lógica HTTP
 │       └── components/pizza-list/
-├── models.py         → Dataclasses Python (Pizza, Pedido, Cliente)
 └── tests/            → 12 tests Pytest (100% pasando)
 ```
 
