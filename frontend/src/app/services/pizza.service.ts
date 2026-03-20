@@ -1,8 +1,6 @@
-// Servicio para obtener las pizzas del backend.
-// Este servicio maneja las peticiones HTTP al endpoint
-// del backend Python para obtener la lista de pizzas.
+// Servicio para gestionar pizzas y pedidos del backend.
 // Autor: Camilo Martinez
-// Fecha: 19/03/2026
+// Fecha: 20/03/2026
 
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
@@ -11,8 +9,8 @@ import { map } from 'rxjs/operators';
 import { Pizza } from '../models/pizza';
 
 // URLs del backend API
-const API_URL = 'http://127.0.0.1:5000/api/pizzas';
-const API_PEDIDOS_URL = 'http://127.0.0.1:5000/api/pedidos';
+const API_PIZZAS_URL: string = 'http://127.0.0.1:5000/api/pizzas';
+const API_PEDIDOS_URL: string = 'http://127.0.0.1:5000/api/pedidos';
 
 // Interfaz para la respuesta del endpoint de pizzas
 interface PizzasResponse {
@@ -20,16 +18,41 @@ interface PizzasResponse {
   status: string;
 }
 
-// Interfaz para el cuerpo del pedido enviado al backend
-interface PedidoPayload {
-  pizzas: Pizza[];
+// Interfaz para un item dentro de un pedido del historial
+export interface ItemHistorial {
+  nombre: string;
+  tamano: string;
+  cantidad: number;
+  precio: number;
+}
+
+// Interfaz para un pedido del historial
+export interface PedidoHistorial {
+  id: number;
+  fecha_hora: string;
+  items: ItemHistorial[];
+  subtotal: number;
+  iva: number;
   total: number;
 }
 
-// Interfaz para la respuesta del endpoint de pedidos
+// Interfaz para la respuesta del historial de pedidos
+interface HistorialResponse {
+  pedidos: PedidoHistorial[];
+  total_pedidos: number;
+}
+
+// Interfaz para el cuerpo del pedido enviado al backend
+interface PedidoPayload {
+  items: object[];
+  total: number;
+}
+
+// Interfaz para la respuesta al enviar un pedido
 interface PedidoResponse {
   status: string;
   mensaje: string;
+  id_pedido: number;
 }
 
 @Injectable({
@@ -40,14 +63,21 @@ export class PizzaService {
 
   // Obtiene la lista de pizzas disponibles desde el backend.
   obtenerPizzas(): Observable<Pizza[]> {
-    return this.http.get<PizzasResponse>(API_URL).pipe(
+    return this.http.get<PizzasResponse>(API_PIZZAS_URL).pipe(
       map((response: PizzasResponse) => response.pizzas)
     );
   }
 
-  // Envía el pedido al backend con la lista de pizzas y el total.
-  enviarPedido(pizzas: Pizza[], total: number): Observable<PedidoResponse> {
-    const payload: PedidoPayload = { pizzas, total };
+  // Envía el pedido al backend con los items detallados y el total.
+  enviarPedido(items: object[], total: number): Observable<PedidoResponse> {
+    const payload: PedidoPayload = { items, total };
     return this.http.post<PedidoResponse>(API_PEDIDOS_URL, payload);
+  }
+
+  // Obtiene el historial completo de pedidos guardados en el backend.
+  obtenerHistorial(): Observable<PedidoHistorial[]> {
+    return this.http.get<HistorialResponse>(API_PEDIDOS_URL).pipe(
+      map((response: HistorialResponse) => response.pedidos)
+    );
   }
 }

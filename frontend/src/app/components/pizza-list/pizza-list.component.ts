@@ -5,7 +5,7 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { PizzaService } from '../../services/pizza.service';
+import { PizzaService, PedidoHistorial } from '../../services/pizza.service';
 import { Pizza, VariantePrecio } from '../../models/pizza';
 
 // Tasa de IVA aplicada en Colombia
@@ -40,6 +40,9 @@ export class PizzaListComponent implements OnInit {
   error: string | null = null;
   enviando: boolean = false;
   pedidoConfirmado: boolean = false;
+  // Historial de pedidos del backend
+  historial: PedidoHistorial[] = [];
+  cargandoHistorial: boolean = false;
 
   constructor(private pizzaService: PizzaService, private cdr: ChangeDetectorRef) {}
 
@@ -64,6 +67,7 @@ export class PizzaListComponent implements OnInit {
         this.cdr.detectChanges();
       }
     });
+    this.cargarHistorial();
   }
 
   // Actualiza la variante seleccionada cuando el usuario cambia el <select>
@@ -131,8 +135,16 @@ export class PizzaListComponent implements OnInit {
   finalizarPedido(): void {
     if (this.carrito.length === 0) return;
     this.enviando = true;
-    const pizzasPayload: Pizza[] = this.carrito.map(item => item.pizza);
-    this.pizzaService.enviarPedido(pizzasPayload, this.total).subscribe({
+
+    // Construir payload con items detallados (nombre, tamaño, cantidad, precio)
+    const itemsPayload = this.carrito.map(item => ({
+      nombre: item.pizza.nombre,
+      tamano: item.variante.tamano,
+      cantidad: item.cantidad,
+      precio: item.variante.precio
+    }));
+
+    this.pizzaService.enviarPedido(itemsPayload, this.total).subscribe({
       next: () => {
         this.pedidoConfirmado = true;
         this.carrito = [];
@@ -150,6 +162,35 @@ export class PizzaListComponent implements OnInit {
         this.cdr.detectChanges();
       }
     });
+  }
+
+  // Carga el historial de pedidos desde el backend
+  cargarHistorial(): void {
+    this.cargandoHistorial = true;
+    this.pizzaService.obtenerHistorial().subscribe({
+      next: (pedidos: PedidoHistorial[]) => {
+        this.historial = pedidos.slice().reverse();
+        this.cargandoHistorial = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error al cargar historial:', err);
+        this.cargandoHistorial = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  // Calcula el total acumulado de todos los pedidos del historial
+  totalAcumulado(): number {
+    return this.historial.reduce((acc, p) => acc + p.total, 0);
+  }
+
+  // Genera el detalle resumido de un pedido (nombres de pizzas separados por coma)
+  generarDetalle(pedido: PedidoHistorial): string {
+    return pedido.items
+      .map(item => `${item.nombre} (${item.tamano}) x${item.cantidad}`)
+      .join(', ');
   }
 
   // Formatea un número como moneda colombiana

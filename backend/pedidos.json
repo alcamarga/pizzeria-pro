@@ -1,0 +1,17 @@
+[
+  {
+    "id": 1,
+    "fecha_hora": "2026-03-20 18:28:32",
+    "items": [
+      {
+        "nombre": "Hawaiana",
+        "tamano": "Personal",
+        "cantidad": 1,
+        "precio": 20000
+      }
+    ],
+    "subtotal": 20000.0,
+    "iva": 3800.0,
+    "total": 23800.0
+  }
+]
