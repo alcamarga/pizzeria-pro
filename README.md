@@ -21,15 +21,12 @@ Aplicación fullstack desacoplada para gestión de pedidos de pizzería. Backend
 
 ### 📸 Vista de Login y Registro
 ![Login y Registro](docs/screenshots/login.png)
-> [Aquí va la captura del Login/Registro]
 
 ### 📸 Vista de Usuario (Menú y Pedidos)
 ![Menú de Cliente](docs/screenshots/menu.png)
-> [Aquí va la captura del Menú de Cliente]
 
 ### 📸 Vista de Administrador (Dashboard y Gráficas)
-![Panel Admin](docs/screenshots/image_3.jpg)
-> [Aquí va tu captura de Admin, image_3.jpg]
+![Panel Admin](docs/screenshots/image_3.png)
 
 ---
 
