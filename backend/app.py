@@ -1,9 +1,9 @@
 ## Creado por: Camilo Martinez
-## Fecha: 19/03/2026
-## Version: 3.0
+## Fecha: 21/03/2026
+## Version: 4.0
 """Aplicación Flask para la Pizzería Pro.
 
-API REST con persistencia en SQLite via Flask-SQLAlchemy.
+API REST con persistencia en SQLite via Flask-SQLAlchemy y autenticación JWT.
 La base de datos se guarda en backend/pizzeria.db.
 
 Typical usage example::
@@ -12,12 +12,19 @@ Typical usage example::
 """
 
 import os
+import jwt as pyjwt
+from datetime import datetime, timedelta, timezone
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from database import db, Pedido, ItemPedido
+from werkzeug.security import generate_password_hash, check_password_hash
+from database import db, Pedido, ItemPedido, Usuario
 
 # Ruta absoluta de la base de datos SQLite
 RUTA_DB: str = os.path.join(os.path.dirname(__file__), 'pizzeria.db')
+
+# Clave secreta para firmar los JWT (en producción usar variable de entorno)
+JWT_SECRET: str = os.environ.get('JWT_SECRET', 'pizzeria-pro-secret-key-2026')
+JWT_EXPIRACION_HORAS: int = 24
 
 # Crear la aplicación Flask
 app: Flask = Flask(__name__)
@@ -34,14 +41,116 @@ CORS(app, resources={
     r"/api/*": {
         "origins": ["http://localhost:4200", "http://127.0.0.1:4200"],
         "methods": ["GET", "POST", "OPTIONS"],
-        "allow_headers": ["Content-Type"]
+        "allow_headers": ["Content-Type", "Authorization"]
     }
 })
 
-# Crear tablas automáticamente si no existen
+# Crear tablas automáticamente si no existen y seed del usuario admin
 with app.app_context():
     db.create_all()
     print(f"[INFO] Base de datos lista: {RUTA_DB}")
+
+    # Crear usuario admin por defecto si no existe
+    if not Usuario.query.filter_by(email='admin@pizzeria.com').first():
+        admin: Usuario = Usuario(
+            nombre='Administrador',
+            email='admin@pizzeria.com',
+            contrasena_hash=generate_password_hash('admin1'),
+            rol='admin'
+        )
+        db.session.add(admin)
+        db.session.commit()
+        print("[INFO] Usuario admin creado: admin@pizzeria.com / admin1")
+
+
+@app.route('/api/auth/registro', methods=['POST'])
+def registro():
+    """Registra un nuevo usuario con contraseña encriptada.
+
+    Returns:
+        JSON con access_token, refresh_token y datos del usuario (HTTP 201).
+        JSON con error si el email ya existe (HTTP 409).
+    """
+    datos: dict = request.get_json()
+    nombre: str = str(datos.get('nombre', '')).strip()
+    email: str = str(datos.get('email', '')).strip().lower()
+    contrasena: str = str(datos.get('contrasena', ''))
+
+    # Validaciones básicas
+    if not nombre or not email or not contrasena:
+        return jsonify({"error": "Todos los campos son obligatorios"}), 400
+    if len(contrasena) < 6:
+        return jsonify({"error": "La contrasena debe tener al menos 6 caracteres"}), 400
+
+    # Verificar que el email no esté registrado
+    if Usuario.query.filter_by(email=email).first():
+        return jsonify({"error": "El email ya esta registrado"}), 409
+
+    # Crear usuario con hash de contraseña
+    nuevo_usuario: Usuario = Usuario(
+        nombre=nombre,
+        email=email,
+        contrasena_hash=generate_password_hash(contrasena),
+        rol='cliente'
+    )
+    db.session.add(nuevo_usuario)
+    db.session.commit()
+
+    token: str = _generar_token(nuevo_usuario)
+    print(f"[AUTH] Nuevo usuario registrado: {email}")
+
+    return jsonify({
+        "access_token": token,
+        "refresh_token": token,
+        "usuario": nuevo_usuario.serializar()
+    }), 201
+
+
+@app.route('/api/auth/login', methods=['POST'])
+def login():
+    """Autentica un usuario y devuelve un JWT si las credenciales son correctas.
+
+    Returns:
+        JSON con access_token, refresh_token y datos del usuario (HTTP 200).
+        JSON con error si las credenciales son incorrectas (HTTP 401).
+    """
+    datos: dict = request.get_json()
+    email: str = str(datos.get('email', '')).strip().lower()
+    contrasena: str = str(datos.get('contrasena', ''))
+
+    usuario: Usuario | None = Usuario.query.filter_by(email=email).first()
+
+    # Verificar existencia y contraseña
+    if not usuario or not check_password_hash(usuario.contrasena_hash, contrasena):
+        return jsonify({"error": "Credenciales incorrectas"}), 401
+
+    token: str = _generar_token(usuario)
+    print(f"[AUTH] Login exitoso: {email}")
+
+    return jsonify({
+        "access_token": token,
+        "refresh_token": token,
+        "usuario": usuario.serializar()
+    }), 200
+
+
+def _generar_token(usuario: Usuario) -> str:
+    """Genera un JWT firmado con los datos del usuario.
+
+    Args:
+        usuario: Instancia del modelo Usuario autenticado.
+
+    Returns:
+        Token JWT como string.
+    """
+    payload: dict = {
+        "sub": usuario.id,
+        "nombre": usuario.nombre,
+        "email": usuario.email,
+        "rol": usuario.rol,
+        "exp": datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRACION_HORAS)
+    }
+    return pyjwt.encode(payload, JWT_SECRET, algorithm="HS256")
 
 
 @app.route('/api/pizzas', methods=['GET'])

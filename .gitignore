@@ -12,6 +12,11 @@ build/
 .coverage
 htmlcov/
 
+# Base de datos local (no subir datos de prueba)
+*.db
+*.sqlite
+*.sqlite3
+
 # Angular / Node
 frontend/node_modules/
 frontend/dist/

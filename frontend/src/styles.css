@@ -1,1 +1,42 @@
-/* You can add global styles to this file, and also import other style files */
+/* Estilos globales — Pizzería Pro */
+/* Autor: Camilo Martinez */
+/* Fecha: 21/03/2026 */
+
+/* Fondo de pizzería rústica en toda la aplicación */
+body {
+  min-height: 100vh;
+  margin: 0;
+  background-image: url('https://images.unsplash.com/photo-1513104890138-7c749659a591?w=1920&q=80');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+
+/* Capa semitransparente oscura sobre la imagen para legibilidad */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* El contenido siempre por encima del overlay */
+app-root {
+  position: relative;
+  z-index: 1;
+}
+
+/* Tarjetas del login/registro con glassmorphism */
+.card {
+  background: rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
+}

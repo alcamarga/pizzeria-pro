@@ -1,9 +1,9 @@
 ## Creado por: Camilo Martinez
-## Fecha: 20/03/2026
-## Version: 1.0
+## Fecha: 21/03/2026
+## Version: 2.0
 """Modelos SQLAlchemy para la base de datos de Pizzería Pro.
 
-Define las tablas Pedido e ItemPedido con su relación uno-a-muchos.
+Define las tablas Pedido, ItemPedido y Usuario.
 La base de datos se guarda en backend/pizzeria.db (SQLite).
 """
 
@@ -12,6 +12,39 @@ from flask_sqlalchemy import SQLAlchemy
 
 # Instancia compartida de SQLAlchemy
 db: SQLAlchemy = SQLAlchemy()
+
+
+class Usuario(db.Model):
+    """Modelo de la tabla usuarios.
+
+    Attributes:
+        id: Identificador único autoincremental
+        nombre: Nombre completo del usuario
+        email: Correo electrónico único
+        contrasena_hash: Hash bcrypt de la contraseña
+        rol: Rol del usuario ('cliente' o 'admin')
+        fecha_registro: Fecha y hora de creación de la cuenta
+    """
+    __tablename__ = 'usuarios'
+
+    id: int = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    nombre: str = db.Column(db.String(100), nullable=False)
+    email: str = db.Column(db.String(150), unique=True, nullable=False)
+    contrasena_hash: str = db.Column(db.String(256), nullable=False)
+    rol: str = db.Column(db.String(20), nullable=False, default='cliente')
+    fecha_registro: str = db.Column(
+        db.String(20), nullable=False,
+        default=lambda: datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    )
+
+    def serializar(self) -> dict:
+        """Convierte el usuario a diccionario para respuesta JSON (sin hash)."""
+        return {
+            'id': self.id,
+            'nombre': self.nombre,
+            'email': self.email,
+            'rol': self.rol
+        }
 
 
 class Pedido(db.Model):

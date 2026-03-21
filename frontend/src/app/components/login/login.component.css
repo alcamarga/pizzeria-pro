@@ -1,0 +1,8 @@
+/* Estilos del componente de login */
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  border-radius: 12px;
+  overflow: hidden;
+}

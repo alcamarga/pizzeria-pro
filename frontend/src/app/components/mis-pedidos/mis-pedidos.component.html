@@ -1,0 +1,44 @@
+<!-- Vista del historial de pedidos del usuario -->
+<!-- Autor: Camilo Martinez -->
+<!-- Fecha: 21/03/2026 -->
+
+<div class="container mt-4 py-4">
+  <h2 class="titulo-menu mb-4 fw-bold">📋 Mis Pedidos</h2>
+
+  <!-- Cargando -->
+  <div *ngIf="cargando" class="text-center py-5 text-white">
+    <div class="spinner-border text-light" role="status"></div>
+    <p class="mt-2">Cargando tus pedidos...</p>
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+
+  <!-- Sin pedidos -->
+  <div *ngIf="!cargando && !error && pedidos.length === 0" class="panel-glass p-4 text-center text-white-50">
+    <p class="fs-5 mb-0">Aún no tienes pedidos registrados. 🍕</p>
+  </div>
+
+  <!-- Lista de pedidos -->
+  <div *ngIf="!cargando && pedidos.length > 0" class="panel-glass">
+    <div class="panel-glass-header">
+      <h5 class="mb-0">{{ pedidos.length }} pedido(s) encontrado(s)</h5>
+    </div>
+    <div class="p-3">
+      <div *ngFor="let pedido of pedidos" class="pedido-card mb-3">
+        <div class="pedido-header d-flex justify-content-between align-items-center">
+          <span class="badge-id">#{{ pedido.id }}</span>
+          <span class="pedido-fecha">🕐 {{ pedido.fecha_hora }}</span>
+          <span class="pedido-total">{{ formatearMoneda(pedido.total) }}</span>
+        </div>
+        <div class="pedido-detalle">
+          <small>{{ generarDetalle(pedido) }}</small>
+        </div>
+        <div class="pedido-desglose d-flex gap-3 mt-1">
+          <small>Subtotal: {{ formatearMoneda(pedido.subtotal) }}</small>
+          <small>IVA: {{ formatearMoneda(pedido.iva) }}</small>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,47 @@
+<!-- Navbar persistente de Pizzería Pro -->
+<!-- Autor: Camilo Martinez -->
+<!-- Fecha: 21/03/2026 -->
+
+<nav class="navbar-pro">
+  <div class="container d-flex align-items-center justify-content-between py-2">
+
+    <!-- Logo -->
+    <a routerLink="/pizzas" class="navbar-logo">
+      🍕 Pizzería Pro
+    </a>
+
+    <!-- Links de navegación -->
+    <div class="navbar-links d-flex align-items-center gap-3">
+
+      <a routerLink="/pizzas" routerLinkActive="link-activo" class="navbar-link">
+        🍽️ Menú
+      </a>
+
+      <!-- Solo visible si está autenticado -->
+      <a *ngIf="authService.estaAutenticado()"
+         routerLink="/mis-pedidos"
+         routerLinkActive="link-activo"
+         class="navbar-link">
+        📋 Mis Pedidos
+      </a>
+
+      <!-- Usuario autenticado: nombre + cerrar sesión -->
+      <ng-container *ngIf="authService.estaAutenticado(); else sinSesion">
+        <span class="navbar-usuario">
+          👤 {{ usuario?.nombre }}
+          <span *ngIf="usuario?.rol === 'admin'" class="badge-admin">ADMIN</span>
+        </span>
+        <button class="btn-cerrar-sesion" (click)="cerrarSesion()">
+          🚪 Cerrar Sesión
+        </button>
+      </ng-container>
+
+      <!-- Sin sesión: botones de acceso -->
+      <ng-template #sinSesion>
+        <a routerLink="/login" class="btn-nav-secundario">Iniciar Sesión</a>
+        <a routerLink="/registro" class="btn-nav-primario">Registrarse</a>
+      </ng-template>
+
+    </div>
+  </div>
+</nav>

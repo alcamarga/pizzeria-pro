@@ -1,0 +1,12 @@
+/* Estilos del componente de registro — reutiliza el estilo del login */
+
+.login-wrapper {
+  background: transparent;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  border-radius: 12px;
+  overflow: hidden;
+}

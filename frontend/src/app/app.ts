@@ -1,16 +1,19 @@
 // Componente principal de la aplicación.
-// Este componente sirve como contenedor principal
-// y muestra el componente de lista de pizzas.
 // Autor: Camilo Martinez
-// Fecha: 19/03/2026
+// Fecha: 21/03/2026
 
 import { Component, signal } from '@angular/core';
-import { PizzaListComponent } from './components/pizza-list/pizza-list.component';
+import { RouterOutlet } from '@angular/router';
+import { NavbarComponent } from './components/navbar/navbar.component';
 
 @Component({
   selector: 'app-root',
-  imports: [PizzaListComponent],
-  templateUrl: './app.html',
+  standalone: true,
+  imports: [RouterOutlet, NavbarComponent],
+  template: `
+    <app-navbar />
+    <router-outlet />
+  `,
   styleUrl: './app.css'
 })
 export class App {

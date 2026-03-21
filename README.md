@@ -1,10 +1,10 @@
 # 🍕 Pizzería Pro — Fullstack App
 
-**Autor:** Camilo Martinez  
-**Versión:** 3.0  
-**Fecha:** 20/03/2026
+**Autor:** Camilo Martinez
+**Versión:** 4.0
+**Fecha:** 21/03/2026
 
-Aplicación fullstack desacoplada para gestión de pedidos de pizzería. Backend en Python/Flask con base de datos relacional SQLite y Frontend en Angular 19 con arquitectura standalone. Desarrollada bajo metodología TDD con cobertura de pruebas > 90%.
+Aplicación fullstack desacoplada para gestión de pedidos de pizzería. Backend en Python/Flask con base de datos relacional SQLite, autenticación JWT y Frontend en Angular 19 con arquitectura standalone, Glassmorphism UI y AuthGuard. Desarrollada bajo metodología TDD con cobertura > 90%.
 
 ---
 
@@ -17,9 +17,12 @@ Aplicación fullstack desacoplada para gestión de pedidos de pizzería. Backend
 | Carrito de compras reactivo | ✅ Completado |
 | Variantes de tamaño (Personal/Mediana/Familiar) | ✅ Completado |
 | Gestión de cantidades en el carrito | ✅ Completado |
-| Endpoint POST /api/pedidos | ✅ Completado |
-| Consola de administración con historial | ✅ Completado |
-| **Persistencia de Datos Profesional (SQLite + SQLAlchemy)** | ✅ **Completado** |
+| Persistencia SQLite + Flask-SQLAlchemy | ✅ Completado |
+| Autenticación JWT (registro + login) | ✅ Completado |
+| AuthGuard + AuthInterceptor Angular | ✅ Completado |
+| Navbar persistente con control de sesión | ✅ Completado |
+| Panel Admin (historial de ventas) | ✅ Completado |
+| Glassmorphism UI con fondo rústico | ✅ Completado |
 | Suite de tests Pytest (12/12) | ✅ Completado |
 
 ---
@@ -27,45 +30,78 @@ Aplicación fullstack desacoplada para gestión de pedidos de pizzería. Backend
 ## Arquitectura
 
 ```
-Pizzería Pro
+Pizzeria-Pro/
 ├── backend/
-│   ├── app.py          → API REST Flask + configuración SQLAlchemy
-│   ├── database.py     → Modelos ORM: Pedido, ItemPedido
+│   ├── app.py          → API REST Flask v4.0 + JWT + seed admin
+│   ├── database.py     → Modelos ORM: Pedido, ItemPedido, Usuario
 │   ├── models.py       → Dataclasses Python (dominio)
-│   └── pizzeria.db     → Base de datos SQLite (generada al arrancar)
-├── frontend/           → SPA Angular 19 Standalone
+│   └── pizzeria.db     → SQLite (generada al arrancar, excluida del repo)
+├── frontend/
 │   └── src/app/
-│       ├── models/     → Interfaces TypeScript
-│       ├── services/   → HttpClient + lógica HTTP
-│       └── components/pizza-list/
+│       ├── models/         → Interfaces TypeScript (Pizza, Usuario)
+│       ├── services/       → PizzaService, AuthService
+│       ├── interceptors/   → AuthInterceptor (JWT en headers)
+│       ├── guards/         → AuthGuard (protección de rutas)
+│       └── components/
+│           ├── navbar/         → Navbar persistente con glassmorphism
+│           ├── login/          → Formulario reactivo con validaciones
+│           ├── registro/       → Registro de nuevos usuarios
+│           ├── pizza-list/     → Menú + carrito + panel admin
+│           └── mis-pedidos/    → Historial personal del cliente
 └── tests/              → 12 tests Pytest (100% pasando)
 ```
-
-El backend y el frontend son completamente independientes. Se comunican exclusivamente a través de la API REST en `http://127.0.0.1:5000`.
 
 ---
 
 ## Funcionalidades
 
-### Menú
-- Listado de pizzas cargado dinámicamente desde la API (`GET /api/pizzas`)
-- Selección dinámica de tamaños (Personal, Mediana, Familiar) con actualización de precio en tiempo real
-- Gestión de cantidades con cálculo de subtotal por fila antes de agregar
+### Menú Público
+- Listado de pizzas desde la API (`GET /api/pizzas`)
+- Selector de tamaños (Personal / Mediana / Familiar) con precio en tiempo real
+- Gestión de cantidades con subtotal por fila antes de agregar
+- Carrito inteligente: incrementa cantidad si el mismo producto ya existe
 
-### Carrito de Compras
-- Carrito inteligente: si el mismo producto (pizza + tamaño) ya existe, incrementa la cantidad
-- Resumen con columna de cantidad, precio unitario y subtotal por item
+### Autenticación
+- Registro de nuevos usuarios con contraseña encriptada (`werkzeug`)
+- Login con JWT firmado (HS256, expira en 24h)
+- `AuthInterceptor`: inyecta `Authorization: Bearer <token>` en cada petición
+- `AuthGuard`: protege rutas privadas y redirige a `/login` si no hay sesión
+- Logout limpia `localStorage` y emite estado `null` al `BehaviorSubject`
+
+### Carrito y Pedidos
+- Resumen con cantidad, precio unitario y subtotal por item
 - Cálculo automático de Subtotal, IVA (19%) y Gran Total
+- Botón "Finalizar Pedido": redirige a `/login` si no hay sesión activa
+- Persistencia en SQLite con relación `Pedido → ItemPedido`
 
-### Pedidos
-- Envío del pedido al backend (`POST /api/pedidos`)
-- Persistencia en base de datos SQLite con Flask-SQLAlchemy
-- Confirmación visual con mensaje de éxito y limpieza automática del carrito
-
-### Consola de Administración
-- Historial completo de ventas (`GET /api/pedidos`) con ID, fecha/hora, detalle y total
+### Panel de Administración
+- Historial completo de ventas visible **solo para usuarios con rol `admin`**
 - Total acumulado de todas las ventas
 - Botón de refresco sin recargar la página
+
+### Mis Pedidos
+- Vista personal del historial de pedidos del cliente autenticado
+- Detalle de items, subtotal, IVA y total por pedido
+
+### UI / UX
+- Fondo rústico de pizzería (Unsplash, `background-attachment: fixed`)
+- Glassmorphism: `background: rgba(0,0,0,0.5)` + `backdrop-filter: blur(15px)`
+- Paleta: Crema `#F5F5F5`, Dorado `#FFC107`, Naranja `#FF5722`
+- Navbar sticky con estado de sesión reactivo
+
+---
+
+## Credenciales de Acceso
+
+### Usuario Admin (Panel de Ventas)
+```
+Email:    admin@pizzeria.com
+Password: admin1
+```
+El usuario admin se crea automáticamente al arrancar el backend si no existe.
+
+### Crear cuenta de cliente
+Navega a `/registro` o haz clic en "Regístrate aquí" desde el login.
 
 ---
 
@@ -77,12 +113,13 @@ El backend y el frontend son completamente independientes. Se comunican exclusiv
 | Backend | Flask | 3.x |
 | Backend | Flask-CORS | 4.x |
 | Backend | Flask-SQLAlchemy | 3.x |
+| Backend | PyJWT | 2.x |
+| Backend | Werkzeug | 3.x |
 | Backend | SQLite | built-in |
 | Frontend | Angular | 19 (Standalone) |
 | Frontend | TypeScript | 5.x (strict) |
 | Frontend | Bootstrap | 5.x |
-| Frontend | HttpClient + RxJS | Angular built-in |
-| Frontend | FormsModule | Angular built-in |
+| Frontend | RxJS | 7.x |
 | Testing | Pytest | 8.x |
 
 ---
@@ -90,128 +127,90 @@ El backend y el frontend son completamente independientes. Se comunican exclusiv
 ## Modelo de Datos Relacional
 
 ```
-┌─────────────────────────┐       ┌──────────────────────────────┐
-│         pedidos         │       │        items_pedido          │
-├─────────────────────────┤       ├──────────────────────────────┤
-│ id          INTEGER PK  │──┐    │ id          INTEGER PK       │
-│ fecha_hora  VARCHAR(20) │  └───▶│ pedido_id   INTEGER FK       │
-│ subtotal    FLOAT       │       │ nombre      VARCHAR(100)     │
-│ iva         FLOAT       │       │ tamano      VARCHAR(50)      │
-│ total       FLOAT       │       │ cantidad    INTEGER          │
-└─────────────────────────┘       │ precio      FLOAT            │
-                                  └──────────────────────────────┘
-```
-
-- Un `Pedido` tiene muchos `ItemPedido` (relación uno-a-muchos)
-- Al eliminar un pedido, sus items se eliminan en cascada
-- Las tablas se crean automáticamente al arrancar el servidor si no existen
-
-### Modelos Python (Dataclasses de dominio)
-
-```python
-@dataclass
-class VariantePrecio:
-    tamano: str    # "Personal", "Mediana", "Familiar"
-    precio: float
-
-@dataclass
-class Pizza:
-    id: int
-    nombre: str
-    descripcion: str
-    variantes: list[VariantePrecio]
-    activo: bool = True
+┌──────────────────────┐     ┌──────────────────────────┐
+│       usuarios       │     │         pedidos          │
+├──────────────────────┤     ├──────────────────────────┤
+│ id        INTEGER PK │     │ id         INTEGER PK    │
+│ nombre    VARCHAR    │     │ fecha_hora VARCHAR        │
+│ email     VARCHAR    │     │ subtotal   FLOAT         │
+│ hash      VARCHAR    │     │ iva        FLOAT         │
+│ rol       VARCHAR    │     │ total      FLOAT         │
+│ fecha_reg VARCHAR    │     └────────────┬─────────────┘
+└──────────────────────┘                  │ 1:N
+                                          ▼
+                              ┌──────────────────────────┐
+                              │       items_pedido       │
+                              ├──────────────────────────┤
+                              │ id        INTEGER PK     │
+                              │ pedido_id INTEGER FK     │
+                              │ nombre    VARCHAR        │
+                              │ tamano    VARCHAR        │
+                              │ cantidad  INTEGER        │
+                              │ precio    FLOAT          │
+                              └──────────────────────────┘
 ```
 
 ---
 
 ## API Endpoints
 
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| `GET` | `/api/health` | Health check + ruta de la DB |
-| `GET` | `/api/pizzas` | Lista de pizzas con variantes |
-| `POST` | `/api/pedidos` | Guarda un pedido en SQLite |
-| `GET` | `/api/pedidos` | Consulta el historial de pedidos |
-
-### Ejemplo `GET /api/pizzas`
-```json
-{
-  "pizzas": [{
-    "id": 1,
-    "nombre": "Hawaiana",
-    "variantes": [
-      { "tamano": "Personal", "precio": 20000 },
-      { "tamano": "Mediana",  "precio": 25000 },
-      { "tamano": "Familiar", "precio": 32500 }
-    ],
-    "activo": true
-  }]
-}
-```
-
-### Ejemplo `POST /api/pedidos`
-```json
-{
-  "items": [
-    { "nombre": "Hawaiana", "tamano": "Familiar", "cantidad": 2, "precio": 32500 }
-  ],
-  "total": 77350
-}
-```
-
-### Ejemplo `GET /api/pedidos`
-```json
-{
-  "pedidos": [{
-    "id": 1,
-    "fecha_hora": "2026-03-20 10:30:00",
-    "items": [{ "nombre": "Hawaiana", "tamano": "Familiar", "cantidad": 2, "precio": 32500 }],
-    "subtotal": 65000.0,
-    "iva": 12350.0,
-    "total": 77350.0
-  }],
-  "total_pedidos": 1
-}
-```
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| `GET` | `/api/health` | No | Health check |
+| `GET` | `/api/pizzas` | No | Lista de pizzas con variantes |
+| `POST` | `/api/auth/registro` | No | Registro de usuario |
+| `POST` | `/api/auth/login` | No | Login, devuelve JWT |
+| `POST` | `/api/pedidos` | JWT | Guarda pedido en SQLite |
+| `GET` | `/api/pedidos` | JWT | Historial de pedidos |
 
 ---
 
-## Guía de Ejecución
+## Guía de Instalación
 
 ### Requisitos previos
 - Python 3.14+
 - Node.js 20+ y Angular CLI 19+
+- Git
 
-### 1. Backend (puerto 5000)
+### 1. Clonar el repositorio
 
 ```bash
-cd D:\Pizzeria-Pro
+git clone https://github.com/alcamarga/pizzeria-pro.git
+cd pizzeria-pro
+```
 
+### 2. Backend (puerto 5000)
+
+```bash
 # Instalar dependencias
-pip install flask flask-cors flask-sqlalchemy
+pip install flask flask-cors flask-sqlalchemy PyJWT werkzeug
 
 # Levantar el servidor
 python backend/app.py
 ```
 
-Al arrancar verás: `[INFO] Base de datos lista: .../pizzeria.db`  
-Verificar en el navegador: `http://127.0.0.1:5000/api/health`
+Al arrancar verás:
+```
+[INFO] Base de datos lista: .../pizzeria.db
+[INFO] Usuario admin creado: admin@pizzeria.com / admin1
+```
 
-### 2. Frontend (puerto 4200)
+Verificar: `http://127.0.0.1:5000/api/health`
+
+### 3. Frontend (puerto 4200)
 
 ```bash
-cd D:\Pizzeria-Pro\frontend
+cd frontend
 npm install
 npm start
 ```
 
 Abrir: `http://localhost:4200`
 
-### 3. Tests (Pytest)
+### 4. Tests
 
 ```bash
-cd D:\Pizzeria-Pro
+cd ..
 pytest tests/ -v
 ```
 
@@ -219,74 +218,46 @@ Resultado esperado: **12 passed** ✅
 
 ---
 
+## Rutas del Frontend
+
+| Ruta | Acceso | Descripción |
+|------|--------|-------------|
+| `/` | Público | Redirige a `/pizzas` |
+| `/pizzas` | Público | Menú + carrito |
+| `/login` | Público | Inicio de sesión |
+| `/registro` | Público | Crear cuenta |
+| `/mis-pedidos` | Autenticado | Historial personal |
+| `/pedido` | Autenticado | Checkout |
+
+---
+
 ## Estándares de Calidad
 
-- **Nombres de archivos:** inglés (`pizza.service.ts`, `database.py`)
-- **Código y comentarios:** español
-- **Tipado fuerte:** Python type hints + TypeScript strict mode
-- **ORM:** Flask-SQLAlchemy con modelos tipados
-- **TDD:** tests escritos antes de la implementación
-- **Cobertura:** > 90% (12/12 tests Pytest pasando)
-- **CORS:** configurado para `http://localhost:4200`
+- Nombres de archivos en inglés (`auth.service.ts`, `database.py`)
+- Código y comentarios en español
+- Tipado fuerte: Python type hints + TypeScript strict mode
+- TDD: tests escritos antes de la implementación
+- Cobertura > 90% (12/12 tests Pytest)
+- CORS configurado para `http://localhost:4200`
+- JWT con expiración de 24h, clave configurable via variable de entorno `JWT_SECRET`
+
+---
+
+## Roadmap
+
+### 🔐 Autenticación Avanzada
+Refresh tokens, recuperación de contraseña por email y OAuth2 (Google).
+
+### 📊 Panel de Business Intelligence
+Dashboard con Chart.js: pizzas más vendidas, horas pico e ingresos mensuales.
+
+### ⚡ Dockerización y Despliegue
+`docker-compose` con Frontend (Nginx), Backend (Gunicorn) y CI/CD con GitHub Actions para despliegue en AWS/Azure.
 
 ---
 
 ## Autor
 
-**Camilo Martinez**  
-Desarrollador Fullstack · Python & Angular · SQL  
-Proyecto desarrollado bajo metodología TDD, arquitectura desacoplada y persistencia relacional con SQLite.
-
----
-
-## 🚀 Próximos Pasos (Roadmap)
-
-El proyecto tiene una base sólida y production-ready. Estas son las tres evoluciones naturales para llevarlo al siguiente nivel:
-
----
-
-### 🔐 Autenticación y Perfiles de Usuario
-
-Implementación de un sistema completo de identidad con **JWT (JSON Web Tokens)** para autenticación stateless.
-
-- Registro e inicio de sesión con hash seguro de contraseñas (`bcrypt`)
-- Tokens de acceso y refresh con expiración configurable
-- Perfiles de cliente: historial de pedidos personales, direcciones de entrega guardadas y preferencias
-- Guards en Angular para proteger rutas privadas
-- Middleware de autenticación en Flask para endpoints protegidos
-
-**Stack previsto:** `Flask-JWT-Extended` · `Angular Route Guards` · `LocalStorage / HttpOnly Cookies`
-
----
-
-### 📊 Panel de Business Intelligence
-
-Dashboard administrativo con visualizaciones interactivas en tiempo real para la toma de decisiones basada en datos.
-
-- Gráfica de barras: **pizzas más vendidas** por período (día / semana / mes)
-- Gráfica de líneas: **horas pico de pedidos** para optimizar la operación
-- Proyecciones de **ingresos mensuales** con tendencia histórica
-- KPIs clave: ticket promedio, tasa de conversión y pedidos por hora
-- Filtros dinámicos por rango de fechas con actualización sin recarga
-
-**Stack previsto:** `Chart.js` o `D3.js` · `Angular standalone components` · `Flask agregaciones SQL`
-
----
-
-### ⚡ Optimización y Despliegue en la Nube
-
-Dockerización completa del entorno para garantizar portabilidad, reproducibilidad y escalabilidad horizontal.
-
-- `Dockerfile` independiente para Backend (Flask + Gunicorn) y Frontend (Nginx)
-- `docker-compose.yml` que orquesta los tres servicios: Frontend, Backend y base de datos
-- Pipeline CI/CD con **GitHub Actions**: build, test y deploy automático en cada push a `main`
-- Despliegue en **AWS (ECS + RDS)** o **Azure (App Service + Azure SQL)**
-- Variables de entorno gestionadas con `.env` y secretos en el proveedor cloud
-
-**Stack previsto:** `Docker` · `Docker Compose` · `GitHub Actions` · `AWS ECS / Azure App Service`
-
----
-
-> Proyecto desarrollado con visión de largo plazo: cada decisión de arquitectura tomada hoy
-> (desacoplamiento, tipado fuerte, TDD, ORM relacional) fue pensada para que estas evoluciones
-> sean incrementales, no refactorizaciones desde cero.
+**Camilo Martinez**
+Desarrollador Fullstack · Python & Angular · SQL
+Proyecto desarrollado bajo metodología TDD, arquitectura desacoplada, autenticación JWT y persistencia relacional con SQLite.

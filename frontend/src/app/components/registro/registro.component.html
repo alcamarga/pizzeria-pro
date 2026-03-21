@@ -1,0 +1,95 @@
+<!-- Formulario de registro de nuevos usuarios -->
+<!-- Autor: Camilo Martinez -->
+<!-- Fecha: 21/03/2026 -->
+
+<div class="login-wrapper d-flex align-items-center justify-content-center min-vh-100">
+  <div class="card shadow-sm login-card">
+
+    <!-- Encabezado -->
+    <div class="card-header bg-dark text-white text-center py-4">
+      <h2 class="mb-0">🍕 Pizzería Pro</h2>
+      <p class="mb-0 mt-1 text-white-50 small">Crea tu cuenta y empieza a pedir</p>
+    </div>
+
+    <div class="card-body p-4">
+
+      <!-- Alerta de error -->
+      <div *ngIf="errorMensaje" class="alert alert-danger d-flex align-items-center gap-2" role="alert">
+        <span>⚠️</span>
+        <span>{{ errorMensaje }}</span>
+      </div>
+
+      <!-- Formulario -->
+      <form [formGroup]="formulario" (ngSubmit)="registrar()" novalidate>
+
+        <!-- Nombre -->
+        <div class="mb-3">
+          <label for="nombre" class="form-label fw-semibold">Nombre completo</label>
+          <input
+            id="nombre"
+            type="text"
+            class="form-control"
+            [class.is-invalid]="nombre.invalid && nombre.touched"
+            formControlName="nombre"
+            placeholder="Tu nombre"
+            autocomplete="name">
+          <div class="invalid-feedback">
+            <span *ngIf="nombre.errors?.['required']">El nombre es obligatorio.</span>
+            <span *ngIf="nombre.errors?.['minlength']">Debe tener al menos 2 caracteres.</span>
+          </div>
+        </div>
+
+        <!-- Email -->
+        <div class="mb-3">
+          <label for="email" class="form-label fw-semibold">Correo electrónico</label>
+          <input
+            id="email"
+            type="email"
+            class="form-control"
+            [class.is-invalid]="email.invalid && email.touched"
+            formControlName="email"
+            placeholder="usuario@ejemplo.com"
+            autocomplete="email">
+          <div class="invalid-feedback">
+            <span *ngIf="email.errors?.['required']">El correo es obligatorio.</span>
+            <span *ngIf="email.errors?.['email']">Ingresa un correo válido.</span>
+          </div>
+        </div>
+
+        <!-- Contraseña -->
+        <div class="mb-4">
+          <label for="contrasena" class="form-label fw-semibold">Contraseña</label>
+          <input
+            id="contrasena"
+            type="password"
+            class="form-control"
+            [class.is-invalid]="contrasena.invalid && contrasena.touched"
+            formControlName="contrasena"
+            placeholder="Mínimo 6 caracteres"
+            autocomplete="new-password">
+          <div class="invalid-feedback">
+            <span *ngIf="contrasena.errors?.['required']">La contraseña es obligatoria.</span>
+            <span *ngIf="contrasena.errors?.['minlength']">Debe tener al menos 6 caracteres.</span>
+          </div>
+        </div>
+
+        <!-- Botón submit -->
+        <button
+          type="submit"
+          class="btn btn-dark w-100 fw-bold py-2"
+          [disabled]="enviando">
+          <span *ngIf="enviando" class="spinner-border spinner-border-sm me-2" role="status"></span>
+          {{ enviando ? 'Creando cuenta...' : '🚀 Crear Cuenta' }}
+        </button>
+
+      </form>
+
+      <!-- Link a login -->
+      <p class="text-center mt-3 mb-0 small">
+        ¿Ya tienes cuenta?
+        <a routerLink="/login" class="fw-semibold text-dark">Inicia sesión aquí</a>
+      </p>
+
+    </div>
+  </div>
+</div>

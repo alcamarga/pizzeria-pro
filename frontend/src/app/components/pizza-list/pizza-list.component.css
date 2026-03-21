@@ -1,46 +1,130 @@
-/* Estilos para el componente PizzaListComponent */
+/* Estilos Glassmorphism oscuro — PizzaListComponent */
 /* Autor: Camilo Martinez */
-/* Fecha: 19/03/2026 */
+/* Fecha: 21/03/2026 */
 
-.container {
-  max-width: 900px;
+/* ── Panel cristal oscuro ───────────────────────────────────────────────── */
+.panel-glass {
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
-.table {
-  background-color: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+/* Encabezado de cada panel */
+.panel-glass-header {
+  background: rgba(0, 0, 0, 0.6);
+  color: #f5f5f5;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
 }
 
-.table thead th {
-  background-color: #1e3a5f;
-  color: #ffffff;
-  font-weight: 600;
-  text-transform: uppercase;
-  font-size: 0.85rem;
+/* ── Título principal ───────────────────────────────────────────────────── */
+h2 {
+  color: #f5f5f5;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
   letter-spacing: 0.5px;
 }
 
-.table tbody tr:hover {
-  background-color: #f8f9fa;
-  cursor: pointer;
+/* ── Tablas ─────────────────────────────────────────────────────────────── */
+.table {
+  background: transparent;
+  margin-bottom: 0;
+  color: #f5f5f5;
 }
 
-.table td {
+.table td,
+.table th {
   vertical-align: middle;
+  border-color: rgba(255, 255, 255, 0.1);
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
 }
 
-.badge {
-  font-size: 0.85rem;
-  padding: 0.35em 0.65em;
+/* Filas del cuerpo con fondo oscuro semitransparente */
+.fila-menu {
+  background: rgba(0, 0, 0, 0.35) !important;
 }
 
-.btn-primary {
-  background-color: #2563eb;
-  border-color: #2563eb;
+.fila-menu:hover {
+  background: rgba(0, 0, 0, 0.55) !important;
 }
 
-.btn-primary:hover {
-  background-color: #1d4ed8;
-  border-color: #1d4ed8;
+/* Nombre de pizza en dorado */
+.nombre-pizza {
+  color: #ffc107;
+  font-weight: 700;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+/* Descripción de pizza */
+.descripcion-pizza {
+  color: rgba(255, 255, 255, 0.65);
+  text-shadow: none;
+}
+
+/* ── Botón Agregar — Naranja intenso ────────────────────────────────────── */
+.btn-agregar {
+  background-color: #ff5722;
+  border-color: #ff5722;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.btn-agregar:hover {
+  background-color: #e64a19;
+  border-color: #e64a19;
+  color: #ffffff;
+}
+
+/* ── Selects e inputs dentro del panel ──────────────────────────────────── */
+.form-select,
+.form-control {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #f5f5f5;
+}
+
+.form-select option {
+  background: #1e1e1e;
+  color: #f5f5f5;
+}
+
+.form-control::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+/* ── Clases de filas y encabezados ──────────────────────────────────────── */
+.titulo-menu {
+  color: #f5f5f5;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.thead-oscuro {
+  background: rgba(15, 23, 42, 0.85) !important;
+  color: #f5f5f5;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.thead-suave {
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #f5f5f5;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.thead-historial {
+  background: rgba(71, 85, 105, 0.8) !important;
+  color: #f5f5f5;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.texto-dorado {
+  color: #ffc107 !important;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.col-cantidad {
+  width: 100px;
 }

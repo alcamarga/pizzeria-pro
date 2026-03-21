@@ -1,11 +1,13 @@
 // Componente para mostrar el menú y gestionar el carrito con cantidades.
 // Autor: Camilo Martinez
-// Fecha: 20/03/2026
+// Fecha: 21/03/2026
 
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { PizzaService, PedidoHistorial } from '../../services/pizza.service';
+import { AuthService } from '../../services/auth.service';
 import { Pizza, VariantePrecio } from '../../models/pizza';
 
 // Tasa de IVA aplicada en Colombia
@@ -44,7 +46,12 @@ export class PizzaListComponent implements OnInit {
   historial: PedidoHistorial[] = [];
   cargandoHistorial: boolean = false;
 
-  constructor(private pizzaService: PizzaService, private cdr: ChangeDetectorRef) {}
+  constructor(
+    private pizzaService: PizzaService,
+    public authService: AuthService,
+    private router: Router,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   // Carga las pizzas e inicializa variante y cantidad por defecto para cada una
   ngOnInit(): void {
@@ -131,9 +138,16 @@ export class PizzaListComponent implements OnInit {
     this.total = subtotal * (1 + IVA);
   }
 
-  // Envía el pedido al backend y limpia el carrito al confirmar
+  // Envía el pedido al backend. Si no hay sesión activa, redirige a /login.
   finalizarPedido(): void {
     if (this.carrito.length === 0) return;
+
+    // Verificar autenticación antes de procesar el pedido
+    if (!this.authService.estaAutenticado()) {
+      this.router.navigate(['/login']);
+      return;
+    }
+
     this.enviando = true;
 
     // Construir payload con items detallados (nombre, tamaño, cantidad, precio)
