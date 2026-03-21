@@ -36,14 +36,8 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # Inicializar SQLAlchemy con la app
 db.init_app(app)
 
-# Habilitar CORS para el frontend Angular
-CORS(app, resources={
-    r"/api/*": {
-        "origins": ["http://localhost:4200", "http://127.0.0.1:4200"],
-        "methods": ["GET", "POST", "OPTIONS"],
-        "allow_headers": ["Content-Type", "Authorization"]
-    }
-})
+# Habilitar CORS para cualquier origen (necesario para Vercel + Render)
+CORS(app)
 
 # Crear tablas automáticamente si no existen y seed del usuario admin
 with app.app_context():
@@ -285,4 +279,5 @@ def health_check():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    puerto: int = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=puerto, debug=True)

@@ -12,13 +12,14 @@ import {
   AuthResponse,
   SesionActiva
 } from '../models/usuario';
+import { environment } from '../../environments/environment';
 
 // Claves usadas en localStorage
 const CLAVE_TOKEN: string   = 'access_token';
 const CLAVE_USUARIO: string = 'usuario';
 
 // URLs del backend de autenticación
-const API_AUTH_URL: string = 'http://127.0.0.1:5000/api/auth';
+const API_AUTH_URL: string = `${environment.apiUrl}/auth`;
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {

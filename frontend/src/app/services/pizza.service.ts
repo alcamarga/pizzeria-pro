@@ -7,10 +7,11 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Pizza } from '../models/pizza';
+import { environment } from '../../environments/environment';
 
 // URLs del backend API
-const API_PIZZAS_URL: string = 'http://127.0.0.1:5000/api/pizzas';
-const API_PEDIDOS_URL: string = 'http://127.0.0.1:5000/api/pedidos';
+const API_PIZZAS_URL: string = `${environment.apiUrl}/pizzas`;
+const API_PEDIDOS_URL: string = `${environment.apiUrl}/pedidos`;
 
 // Interfaz para la respuesta del endpoint de pizzas
 interface PizzasResponse {
