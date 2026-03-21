@@ -2,16 +2,26 @@
 // Autor: Camilo Martinez
 // Fecha: 21/03/2026
 
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { Chart, registerables, TooltipItem } from 'chart.js';
 import { PizzaService, PedidoHistorial } from '../../services/pizza.service';
 import { AuthService } from '../../services/auth.service';
 import { Pizza, VariantePrecio } from '../../models/pizza';
 
+// Registrar todos los módulos de Chart.js de una vez
+Chart.register(...registerables);
+
 // Tasa de IVA aplicada en Colombia
 const IVA: number = 0.19;
+
+// Colores neón con buen contraste sobre fondo oscuro
+const COLORES_GRAFICA: string[] = [
+  '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0',
+  '#9966FF', '#FF9F40', '#00E676', '#FF5722'
+];
 
 // Item del carrito: pizza + variante + cantidad
 interface ItemCarrito {
@@ -27,24 +37,20 @@ interface ItemCarrito {
   imports: [CommonModule, FormsModule],
   standalone: true
 })
-export class PizzaListComponent implements OnInit {
-  // Lista de pizzas del menú
+export class PizzaListComponent implements OnInit, OnDestroy, AfterViewInit {
   pizzas: Pizza[] = [];
-  // Variante seleccionada por pizza (clave: pizza.id)
   variantesSeleccionadas: Record<number, VariantePrecio> = {};
-  // Cantidad seleccionada por pizza antes de agregar (clave: pizza.id)
   cantidadesSeleccionadas: Record<number, number> = {};
-  // Items del carrito
   carrito: ItemCarrito[] = [];
-  // Gran total con IVA incluido
   total: number = 0;
   cargando: boolean = true;
   error: string | null = null;
   enviando: boolean = false;
   pedidoConfirmado: boolean = false;
-  // Historial de pedidos del backend
   historial: PedidoHistorial[] = [];
   cargandoHistorial: boolean = false;
+
+  private graficaInstancia: Chart | null = null;
 
   constructor(
     private pizzaService: PizzaService,
@@ -53,132 +59,104 @@ export class PizzaListComponent implements OnInit {
     private cdr: ChangeDetectorRef
   ) {}
 
-  // Carga las pizzas e inicializa variante y cantidad por defecto para cada una
+  // Devuelve true si el usuario tiene rol admin
+  get esAdmin(): boolean {
+    return this.authService.obtenerUsuario()?.rol === 'admin';
+  }
+
   ngOnInit(): void {
     this.pizzaService.obtenerPizzas().subscribe({
       next: (pizzas: Pizza[]) => {
         this.pizzas = pizzas;
         pizzas.forEach(p => {
-          if (p.variantes.length > 0) {
-            this.variantesSeleccionadas[p.id] = p.variantes[0];
-          }
+          if (p.variantes.length > 0) this.variantesSeleccionadas[p.id] = p.variantes[0];
           this.cantidadesSeleccionadas[p.id] = 1;
         });
         this.cargando = false;
         this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error('Error al cargar pizzas:', err);
         this.error = `Error ${err.status || 'de conexión'}: No se pudieron cargar las pizzas.`;
         this.cargando = false;
         this.cdr.detectChanges();
       }
     });
-    this.cargarHistorial();
+
+    if (this.esAdmin) this.cargarHistorial();
   }
 
-  // Actualiza la variante seleccionada cuando el usuario cambia el <select>
-  cambiarVariante(pizzaId: number, tamano: string): void {
-    const pizza: Pizza | undefined = this.pizzas.find(p => p.id === pizzaId);
-    if (!pizza) return;
-    const variante: VariantePrecio | undefined = pizza.variantes.find(v => v.tamano === tamano);
-    if (variante) {
-      this.variantesSeleccionadas[pizzaId] = variante;
+  ngAfterViewInit(): void {
+    // Si ya hay historial cargado (ej. recarga), renderizar la gráfica
+    if (this.esAdmin && !this.cargandoHistorial && this.historial.length > 0) {
+      setTimeout(() => this.renderizarGrafica(), 0);
     }
   }
 
-  // Calcula el subtotal de la fila (cantidad x precio de la variante seleccionada)
-  calcularSubtotalFila(pizzaId: number): number {
-    const variante: VariantePrecio = this.variantesSeleccionadas[pizzaId];
-    const cantidad: number = this.cantidadesSeleccionadas[pizzaId] ?? 1;
-    if (!variante) return 0;
-    return variante.precio * cantidad;
+  ngOnDestroy(): void {
+    this.graficaInstancia?.destroy();
   }
 
-  // Agrega al carrito con la variante y cantidad seleccionadas.
-  // Si ya existe el mismo producto (pizza + tamaño), incrementa la cantidad.
+  cambiarVariante(pizzaId: number, tamano: string): void {
+    const pizza = this.pizzas.find(p => p.id === pizzaId);
+    const variante = pizza?.variantes.find(v => v.tamano === tamano);
+    if (variante) this.variantesSeleccionadas[pizzaId] = variante;
+  }
+
+  calcularSubtotalFila(pizzaId: number): number {
+    const variante = this.variantesSeleccionadas[pizzaId];
+    const cantidad = this.cantidadesSeleccionadas[pizzaId] ?? 1;
+    return variante ? variante.precio * cantidad : 0;
+  }
+
   agregarAlCarrito(pizza: Pizza): void {
-    const variante: VariantePrecio = this.variantesSeleccionadas[pizza.id];
-    const cantidad: number = this.cantidadesSeleccionadas[pizza.id] ?? 1;
+    const variante = this.variantesSeleccionadas[pizza.id];
+    const cantidad = this.cantidadesSeleccionadas[pizza.id] ?? 1;
     if (!variante || cantidad < 1) return;
 
-    // Buscar si ya existe el mismo producto en el carrito
-    const indiceExistente: number = this.carrito.findIndex(
-      item => item.pizza.id === pizza.id && item.variante.tamano === variante.tamano
+    const idx = this.carrito.findIndex(
+      i => i.pizza.id === pizza.id && i.variante.tamano === variante.tamano
     );
+    this.carrito = idx >= 0
+      ? this.carrito.map((i, n) => n === idx ? { ...i, cantidad: i.cantidad + cantidad } : i)
+      : [...this.carrito, { pizza, variante, cantidad }];
 
-    if (indiceExistente >= 0) {
-      // Incrementar cantidad del item existente
-      this.carrito = this.carrito.map((item, i) =>
-        i === indiceExistente
-          ? { ...item, cantidad: item.cantidad + cantidad }
-          : item
-      );
-    } else {
-      // Agregar nuevo item al carrito
-      this.carrito = [...this.carrito, { pizza, variante, cantidad }];
-    }
-
-    // Resetear cantidad del selector a 1
     this.cantidadesSeleccionadas[pizza.id] = 1;
     this.recalcularTotal();
   }
 
-  // Elimina un item del carrito por su índice
   eliminarDelCarrito(indice: number): void {
     this.carrito = this.carrito.filter((_, i) => i !== indice);
     this.recalcularTotal();
   }
 
-  // Recalcula el total del carrito con IVA
   private recalcularTotal(): void {
-    const subtotal: number = this.carrito.reduce(
-      (acc, item) => acc + item.variante.precio * item.cantidad, 0
-    );
+    const subtotal = this.carrito.reduce((acc, i) => acc + i.variante.precio * i.cantidad, 0);
     this.total = subtotal * (1 + IVA);
   }
 
-  // Envía el pedido al backend. Si no hay sesión activa, redirige a /login.
   finalizarPedido(): void {
     if (this.carrito.length === 0) return;
-
-    // Verificar autenticación antes de procesar el pedido
-    if (!this.authService.estaAutenticado()) {
-      this.router.navigate(['/login']);
-      return;
-    }
-
+    if (!this.authService.estaAutenticado()) { this.router.navigate(['/login']); return; }
     this.enviando = true;
 
-    // Construir payload con items detallados (nombre, tamaño, cantidad, precio)
-    const itemsPayload = this.carrito.map(item => ({
-      nombre: item.pizza.nombre,
-      tamano: item.variante.tamano,
-      cantidad: item.cantidad,
-      precio: item.variante.precio
+    const payload = this.carrito.map(i => ({
+      nombre: i.pizza.nombre, tamano: i.variante.tamano,
+      cantidad: i.cantidad, precio: i.variante.precio
     }));
 
-    this.pizzaService.enviarPedido(itemsPayload, this.total).subscribe({
+    this.pizzaService.enviarPedido(payload, this.total).subscribe({
       next: () => {
         this.pedidoConfirmado = true;
-        this.carrito = [];
-        this.total = 0;
-        this.enviando = false;
+        this.carrito = []; this.total = 0; this.enviando = false;
         this.cdr.detectChanges();
-        setTimeout(() => {
-          this.pedidoConfirmado = false;
-          this.cdr.detectChanges();
-        }, 4000);
+        setTimeout(() => { this.pedidoConfirmado = false; this.cdr.detectChanges(); }, 4000);
       },
-      error: (err) => {
-        console.error('Error al enviar pedido:', err);
-        this.enviando = false;
-        this.cdr.detectChanges();
-      }
+      error: () => { this.enviando = false; this.cdr.detectChanges(); }
     });
   }
 
-  // Carga el historial de pedidos desde el backend
+  // Carga historial y renderiza la gráfica usando getElementById
+  // (evita el problema de @ViewChild con *ngIf)
   cargarHistorial(): void {
     this.cargandoHistorial = true;
     this.pizzaService.obtenerHistorial().subscribe({
@@ -186,33 +164,78 @@ export class PizzaListComponent implements OnInit {
         this.historial = pedidos.slice().reverse();
         this.cargandoHistorial = false;
         this.cdr.detectChanges();
+        // Esperar dos ciclos para que el *ngIf pinte el canvas en el DOM
+        setTimeout(() => this.renderizarGrafica(), 200);
       },
-      error: (err) => {
-        console.error('Error al cargar historial:', err);
-        this.cargandoHistorial = false;
-        this.cdr.detectChanges();
+      error: () => { this.cargandoHistorial = false; this.cdr.detectChanges(); }
+    });
+  }
+
+  // Cuenta unidades vendidas por nombre de pizza
+  private calcularDatosGrafica(): { etiquetas: string[]; valores: number[] } {
+    const conteo: Record<string, number> = {};
+    this.historial.forEach(p =>
+      p.items.forEach(i => { conteo[i.nombre] = (conteo[i.nombre] ?? 0) + i.cantidad; })
+    );
+    return { etiquetas: Object.keys(conteo), valores: Object.values(conteo) };
+  }
+
+  // Renderiza la gráfica usando getElementById para evitar problemas con *ngIf
+  private renderizarGrafica(): void {
+    const canvas = document.getElementById('graficaVentas') as HTMLCanvasElement | null;
+    if (!canvas) return;
+
+    const { etiquetas, valores } = this.calcularDatosGrafica();
+    if (etiquetas.length === 0) return;
+
+    this.graficaInstancia?.destroy();
+
+    this.graficaInstancia = new Chart(canvas, {
+      type: 'pie',
+      data: {
+        labels: etiquetas,
+        datasets: [{
+          data: valores,
+          backgroundColor: COLORES_GRAFICA.slice(0, etiquetas.length),
+          borderColor: 'rgba(255,255,255,0.15)',
+          borderWidth: 2,
+          hoverOffset: 12
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              color: '#f5f5f5',
+              font: { size: 13, weight: 'bold' },
+              padding: 18,
+              usePointStyle: true
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: (ctx: TooltipItem<'pie'>) => ` ${ctx.label}: ${ctx.parsed} unidades`
+            }
+          }
+        }
       }
     });
   }
 
-  // Calcula el total acumulado de todos los pedidos del historial
   totalAcumulado(): number {
     return this.historial.reduce((acc, p) => acc + p.total, 0);
   }
 
-  // Genera el detalle resumido de un pedido (nombres de pizzas separados por coma)
   generarDetalle(pedido: PedidoHistorial): string {
-    return pedido.items
-      .map(item => `${item.nombre} (${item.tamano}) x${item.cantidad}`)
-      .join(', ');
+    return pedido.items.map(i => `${i.nombre} (${i.tamano}) x${i.cantidad}`).join(', ');
   }
 
-  // Formatea un número como moneda colombiana
   formatearMoneda(precio: number): string {
     return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
-      minimumFractionDigits: 0
+      style: 'currency', currency: 'COP', minimumFractionDigits: 0
     }).format(precio);
   }
 }

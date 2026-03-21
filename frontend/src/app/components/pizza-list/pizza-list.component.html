@@ -27,7 +27,7 @@
             <th class="text-center">Cantidad</th>
             <th class="text-end">Precio unit.</th>
             <th class="text-end">Subtotal</th>
-            <th class="text-center">Acción</th>
+            <th *ngIf="!esAdmin" class="text-center">Acción</th>
           </tr>
         </thead>
         <tbody>
@@ -58,7 +58,7 @@
             <td class="text-end fw-bold texto-dorado">
               {{ formatearMoneda(calcularSubtotalFila(pizza.id)) }}
             </td>
-            <td class="text-center">
+            <td *ngIf="!esAdmin" class="text-center">
               <button class="btn btn-sm btn-agregar" (click)="agregarAlCarrito(pizza)">
                 + Agregar
               </button>
@@ -161,37 +161,50 @@
         No hay pedidos registrados aún.
       </div>
 
-      <div *ngIf="!cargandoHistorial && historial.length > 0" class="table-responsive">
-        <table class="table table-sm table-hover align-middle mb-0">
-          <thead>
-            <tr class="thead-historial">
-              <th class="text-center">#ID</th>
-              <th>Fecha / Hora</th>
-              <th>Detalle</th>
-              <th class="text-end">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let pedido of historial" class="fila-menu">
-              <td class="text-center">
-                <span class="badge bg-secondary">#{{ pedido.id }}</span>
-              </td>
-              <td>{{ pedido.fecha_hora }}</td>
-              <td><small>{{ generarDetalle(pedido) }}</small></td>
-              <td class="text-end fw-bold texto-dorado">
-                {{ formatearMoneda(pedido.total) }}
-              </td>
-            </tr>
-          </tbody>
-          <tfoot>
-            <tr class="thead-oscuro">
-              <td colspan="3" class="text-end fw-bold">Total acumulado:</td>
-              <td class="text-end fw-bold">{{ formatearMoneda(totalAcumulado()) }}</td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-    </div>
-  </div>
+      <div *ngIf="!cargandoHistorial && historial.length > 0">
 
-</div>
+        <!-- Gráfica de torta: distribución de ventas por pizza -->
+        <div class="grafica-wrapper mb-4">
+          <h6 class="text-center text-white mb-3" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.8);">
+            🥧 Distribución de Ventas por Pizza
+          </h6>
+          <canvas id="graficaVentas" class="grafica-canvas"></canvas>
+        </div>
+
+        <!-- Tabla de historial -->
+        <div class="table-responsive">
+          <table class="table table-sm table-hover align-middle mb-0">
+            <thead>
+              <tr class="thead-historial">
+                <th class="text-center">#ID</th>
+                <th>Fecha / Hora</th>
+                <th>Detalle</th>
+                <th class="text-end">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let pedido of historial" class="fila-menu">
+                <td class="text-center">
+                  <span class="badge bg-secondary">#{{ pedido.id }}</span>
+                </td>
+                <td>{{ pedido.fecha_hora }}</td>
+                <td><small>{{ generarDetalle(pedido) }}</small></td>
+                <td class="text-end fw-bold texto-dorado">
+                  {{ formatearMoneda(pedido.total) }}
+                </td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr class="thead-oscuro">
+                <td colspan="3" class="text-end fw-bold">Total acumulado:</td>
+                <td class="text-end fw-bold">{{ formatearMoneda(totalAcumulado()) }}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+      </div><!-- fin historial.length > 0 -->
+    </div><!-- fin p-3 -->
+  </div><!-- fin panel admin -->
+
+</div><!-- fin container -->
