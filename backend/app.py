@@ -36,8 +36,19 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # Inicializar SQLAlchemy con la app
 db.init_app(app)
 
-# Habilitar CORS explícito para todos los orígenes en rutas /api/*
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+# Habilitar CORS — permite cualquier origen, método y cabecera
+CORS(app, resources={r"/*": {
+    "origins": "*",
+    "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    "allow_headers": ["Content-Type", "Authorization"]
+}})
+
+@app.after_request
+def agregar_headers_cors(response):
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+    return response
 
 # Crear tablas automáticamente si no existen y seed del usuario admin
 with app.app_context():
