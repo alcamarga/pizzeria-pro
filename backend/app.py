@@ -36,8 +36,8 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # Inicializar SQLAlchemy con la app
 db.init_app(app)
 
-# Habilitar CORS para cualquier origen (necesario para Vercel + Render)
-CORS(app)
+# Habilitar CORS explícito para todos los orígenes en rutas /api/*
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 # Crear tablas automáticamente si no existen y seed del usuario admin
 with app.app_context():
