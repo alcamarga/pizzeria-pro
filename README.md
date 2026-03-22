@@ -175,6 +175,100 @@ Pizzeria-Pro/
 
 ---
 
+## ☁️ Despliegue y Configuración
+
+### Backend — Render
+
+El backend corre en [Render](https://render.com) usando **Gunicorn** como servidor WSGI de producción.
+
+**Comando de inicio en Render:**
+```
+gunicorn app:app
+```
+
+**CORS configurado en `app.py`:**
+
+Flask-CORS está habilitado con `resources={r"/*": {"origins": "*"}}` para permitir peticiones desde cualquier origen. Además, se usa un `@after_request` handler como respaldo que inyecta los headers manualmente en cada respuesta, incluyendo las preflight `OPTIONS`:
+
+```python
+from flask_cors import CORS
+
+CORS(app, resources={r"/*": {
+    "origins": "*",
+    "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    "allow_headers": ["Content-Type", "Authorization"]
+}})
+
+@app.after_request
+def agregar_headers_cors(response):
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+    return response
+```
+
+`flask-cors` debe estar en `backend/requirements.txt` (ya incluido en versión 4.x).
+
+---
+
+### Frontend — Vercel
+
+El frontend se despliega en [Vercel](https://vercel.com) desde la carpeta `frontend/` como raíz del proyecto.
+
+**`frontend/vercel.json`** — configura el build de producción y el rewrite para SPA:
+```json
+{
+  "buildCommand": "ng build --configuration=production",
+  "outputDirectory": "dist/frontend/browser",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+}
+```
+
+**`frontend/angular.json`** — el `fileReplacements` en la configuración `production` es crítico para que Angular use `environment.prod.ts` en lugar de `environment.ts` (que apunta a `localhost`):
+```json
+"production": {
+  "fileReplacements": [
+    {
+      "replace": "src/environments/environment.ts",
+      "with": "src/environments/environment.prod.ts"
+    }
+  ]
+}
+```
+
+Sin esta configuración, Vercel compila con el entorno de desarrollo y el frontend intenta conectarse a `localhost:5000` en lugar de Render.
+
+---
+
+### Variables de Entorno
+
+| Variable | Dónde | Valor |
+|----------|-------|-------|
+| `JWT_SECRET` | Render (backend) | Clave secreta para firmar tokens JWT |
+
+La URL del backend **no se configura como variable de entorno en Vercel** — se define directamente en `frontend/src/environments/environment.prod.ts`:
+```typescript
+export const environment = {
+  produccion: true,
+  apiUrl: 'https://pizzeria-pro.onrender.com/api'
+};
+```
+
+> La URL debe terminar en `/api` sin barra final.
+
+---
+
+### Checklist de despliegue
+
+- [ ] Render: servicio apunta a `backend/` con comando `gunicorn app:app`
+- [ ] Render: variable de entorno `JWT_SECRET` configurada
+- [ ] Vercel: raíz del proyecto apunta a `frontend/`
+- [ ] `frontend/vercel.json` tiene `buildCommand` con `--configuration=production`
+- [ ] `frontend/angular.json` tiene `fileReplacements` en la config `production`
+- [ ] `frontend/src/environments/environment.prod.ts` tiene la URL correcta de Render
+
+---
+
 ## 🚀 Roadmap
 
 ### 🔐 Autenticación Avanzada y Perfiles
