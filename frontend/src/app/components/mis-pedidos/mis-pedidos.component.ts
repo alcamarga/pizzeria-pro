@@ -4,7 +4,7 @@
 
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { PizzaService, PedidoHistorial } from '../../services/pizza.service';
+import { PizzaService, RegistroPedido, ArticuloHistorial } from '../../services/pizza.service';
 
 @Component({
   selector: 'app-mis-pedidos',
@@ -16,13 +16,13 @@ import { PizzaService, PedidoHistorial } from '../../services/pizza.service';
 export class MisPedidosComponent implements OnInit {
   private pizzaService = inject(PizzaService);
 
-  pedidos: PedidoHistorial[] = [];
+  pedidos: RegistroPedido[] = [];
   cargando: boolean           = true;
   error: string | null        = null;
 
   ngOnInit(): void {
-    this.pizzaService.obtenerHistorial().subscribe({
-      next: (pedidos: PedidoHistorial[]) => {
+    this.pizzaService.obtenerHistorialDeVentas().subscribe({
+      next: (pedidos: RegistroPedido[]) => {
         this.pedidos  = pedidos;
         this.cargando = false;
       },
@@ -33,17 +33,15 @@ export class MisPedidosComponent implements OnInit {
     });
   }
 
-  // Formatea número como moneda colombiana
   formatearMoneda(valor: number): string {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency', currency: 'COP', minimumFractionDigits: 0
     }).format(valor);
   }
 
-  // Genera resumen de items de un pedido
-  generarDetalle(pedido: PedidoHistorial): string {
-    return pedido.items
-      .map(i => `${i.nombre} (${i.tamano}) x${i.cantidad}`)
+  generarDetalle(pedido: RegistroPedido): string {
+    return pedido.articulos
+      .map((i: ArticuloHistorial) => `${i.nombre} (${i.tamano}) x${i.cantidad}`)
       .join(', ');
   }
 }

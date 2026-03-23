@@ -1,104 +1,84 @@
 // Servicio de autenticación JWT con persistencia en localStorage.
-// Autor: Camilo Martinez
-// Fecha: 21/03/2026
+// Autor: Camilo Martinez | Fecha: 23/03/2026 | Versión: 4.1
 
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject, tap } from 'rxjs';
 import {
   Usuario,
-  LoginPayload,
-  RegistroPayload,
-  AuthResponse,
+  LoginCargaUtil,
+  RegistroCargaUtil,
+  RespuestaAutenticacion,
   SesionActiva
 } from '../models/usuario';
 import { environment } from '../../environments/environment';
 
-// Claves usadas en localStorage
-const CLAVE_TOKEN: string   = 'access_token';
+const CLAVE_TOKEN: string = 'access_token';
 const CLAVE_USUARIO: string = 'usuario';
-
-// URLs del backend de autenticación
-const API_AUTH_URL: string = `${environment.apiUrl}/auth`;
+const URL_API_AUTENTICACION: string = `${environment.apiUrl}/auth`;
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private http = inject(HttpClient);
 
-  // Estado reactivo de la sesión — null significa "no autenticado"
-  private sesion$: BehaviorSubject<SesionActiva | null> =
+  // Estado reactivo de la sesión
+  private _sesion$: BehaviorSubject<SesionActiva | null> =
     new BehaviorSubject<SesionActiva | null>(this.cargarSesionGuardada());
 
-  // Observable público para que los componentes y guards se suscriban
-  readonly sesionActiva$: Observable<SesionActiva | null> = this.sesion$.asObservable();
+  readonly sesionActiva$: Observable<SesionActiva | null> = this._sesion$.asObservable();
 
-  // ─── Consultas de estado ────────────────────────────────────────────────────
-
-  // Devuelve true si hay una sesión activa
   estaAutenticado(): boolean {
-    return this.sesion$.getValue() !== null;
+    return this._sesion$.getValue() !== null;
   }
 
-  // Devuelve el usuario actual o null si no hay sesión
-  obtenerUsuario(): Usuario | null {
-    return this.sesion$.getValue()?.usuario ?? null;
+  obtenerUsuarioActual(): Usuario | null {
+    return this._sesion$.getValue()?.usuario ?? null;
   }
 
-  // Devuelve el access token almacenado o null
-  obtenerToken(): string | null {
+  obtenerTokenAcceso(): string | null {
     return localStorage.getItem(CLAVE_TOKEN);
   }
 
-  // ─── Autenticación ──────────────────────────────────────────────────────────
-
-  // Envía credenciales al backend, guarda el token y actualiza el estado
-  login(payload: LoginPayload): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${API_AUTH_URL}/login`, payload).pipe(
-      tap((respuesta: AuthResponse) => this.guardarSesion(respuesta))
+  iniciarSesion(credenciales: LoginCargaUtil): Observable<RespuestaAutenticacion> {
+    return this.http.post<RespuestaAutenticacion>(`${URL_API_AUTENTICACION}/login`, credenciales).pipe(
+      tap((respuesta: RespuestaAutenticacion) => this.registrarSesionLocal(respuesta))
     );
   }
 
-  // Registra un nuevo usuario y lo autentica directamente
-  registrar(payload: RegistroPayload): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${API_AUTH_URL}/registro`, payload).pipe(
-      tap((respuesta: AuthResponse) => this.guardarSesion(respuesta))
+  registrarUsuario(datos: RegistroCargaUtil): Observable<RespuestaAutenticacion> {
+    return this.http.post<RespuestaAutenticacion>(`${URL_API_AUTENTICACION}/registro`, datos).pipe(
+      tap((respuesta: RespuestaAutenticacion) => this.registrarSesionLocal(respuesta))
     );
   }
 
-  // Limpia el token, los datos del usuario y emite null al BehaviorSubject
-  logout(): void {
+  cerrarSesion(): void {
     localStorage.removeItem(CLAVE_TOKEN);
     localStorage.removeItem(CLAVE_USUARIO);
-    this.sesion$.next(null);
+    this._sesion$.next(null);
   }
 
-  // ─── Helpers privados ───────────────────────────────────────────────────────
-
-  // Persiste el token y el usuario en localStorage y actualiza el BehaviorSubject
-  private guardarSesion(respuesta: AuthResponse): void {
+  private registrarSesionLocal(respuesta: RespuestaAutenticacion): void {
     localStorage.setItem(CLAVE_TOKEN, respuesta.access_token);
     localStorage.setItem(CLAVE_USUARIO, JSON.stringify(respuesta.usuario));
 
-    const sesion: SesionActiva = {
+    const nuevaSesion: SesionActiva = {
       usuario: respuesta.usuario,
       accessToken: respuesta.access_token
     };
-    this.sesion$.next(sesion);
+    this._sesion$.next(nuevaSesion);
   }
 
-  // Intenta reconstruir la sesión desde localStorage al iniciar la app
   private cargarSesionGuardada(): SesionActiva | null {
-    const token: string | null   = localStorage.getItem(CLAVE_TOKEN);
-    const usuarioRaw: string | null = localStorage.getItem(CLAVE_USUARIO);
-    if (!token || !usuarioRaw) return null;
+    const token: string | null = localStorage.getItem(CLAVE_TOKEN);
+    const usuarioCrudo: string | null = localStorage.getItem(CLAVE_USUARIO);
+    
+    if (!token || !usuarioCrudo) return null;
 
     try {
-      const usuario: Usuario = JSON.parse(usuarioRaw) as Usuario;
+      const usuario: Usuario = JSON.parse(usuarioCrudo) as Usuario;
       return { usuario, accessToken: token };
     } catch {
-      // JSON corrupto — limpiar y forzar nuevo login
-      localStorage.removeItem(CLAVE_TOKEN);
-      localStorage.removeItem(CLAVE_USUARIO);
+      this.cerrarSesion();
       return null;
     }
   }

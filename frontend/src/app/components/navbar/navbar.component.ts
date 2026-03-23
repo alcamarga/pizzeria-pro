@@ -2,10 +2,11 @@
 // Autor: Camilo Martinez
 // Fecha: 21/03/2026
 
-import { Component, inject } from '@angular/core';
+import { Component, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive, Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { CartService } from '../../services/cart.service';
 import { Usuario } from '../../models/usuario';
 
 @Component({
@@ -16,17 +17,18 @@ import { Usuario } from '../../models/usuario';
   imports: [CommonModule, RouterLink, RouterLinkActive]
 })
 export class NavbarComponent {
-  public authService = inject(AuthService);
-  private router     = inject(Router);
+  public authService  = inject(AuthService);
+  public carritoServicio = inject(CartService);
+  private router      = inject(Router);
 
-  // Devuelve el usuario activo o null
+  totalArticulos = this.carritoServicio.totalArticulos;
+
   get usuario(): Usuario | null {
-    return this.authService.obtenerUsuario();
+    return this.authService.obtenerUsuarioActual();
   }
 
-  // Cierra sesión y redirige al login
   cerrarSesion(): void {
-    this.authService.logout();
+    this.authService.cerrarSesion();
     this.router.navigate(['/login']);
   }
 }

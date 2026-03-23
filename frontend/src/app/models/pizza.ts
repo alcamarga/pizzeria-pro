@@ -1,14 +1,11 @@
-// Interfaces para el modelo Pizza con variantes de precio por tamaño.
-// Autor: Camilo Martinez
-// Fecha: 20/03/2026
+// Modelos para el catálogo de productos y sus precios.
+// Autor: Camilo Martinez | Fecha: 23/03/2026 | Versión: 4.1
 
-// Variante de precio según el tamaño de la pizza
 export interface VariantePrecio {
   tamano: string;
   precio: number;
 }
 
-// Modelo principal de pizza con lista de variantes
 export interface Pizza {
   id: number;
   nombre: string;

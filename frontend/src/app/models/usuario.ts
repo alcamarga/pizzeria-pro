@@ -1,8 +1,8 @@
 // Interfaces para el modelo Usuario y autenticación JWT.
-// Autor: Camilo Martinez
-// Fecha: 21/03/2026
+// Autor: Camilo Martinez | Fecha: 23/03/2026 | Versión: 4.1
 
-// Datos del usuario autenticado (payload del JWT)
+export type RolUsuario = 'cliente' | 'admin';
+
 export interface Usuario {
   id: number;
   nombre: string;
@@ -10,30 +10,27 @@ export interface Usuario {
   rol: RolUsuario;
 }
 
-// Roles disponibles en el sistema
-export type RolUsuario = 'cliente' | 'admin';
-
-// Payload para el formulario de registro
-export interface RegistroPayload {
+// Datos necesarios para el formulario de registro
+export interface RegistroCargaUtil {
   nombre: string;
   email: string;
   contrasena: string;
 }
 
-// Payload para el formulario de inicio de sesión
-export interface LoginPayload {
+// Datos necesarios para el inicio de sesión
+export interface LoginCargaUtil {
   email: string;
   contrasena: string;
 }
 
-// Respuesta del backend al autenticar correctamente
-export interface AuthResponse {
+// Estructura de la respuesta del servidor al autenticar
+export interface RespuestaAutenticacion {
   access_token: string;
   refresh_token: string;
   usuario: Usuario;
 }
 
-// Estado de sesión almacenado en memoria por el servicio de auth
+// Representación de la sesión activa en el estado de la aplicación
 export interface SesionActiva {
   usuario: Usuario;
   accessToken: string;

@@ -20,7 +20,7 @@ export const authInterceptor: HttpInterceptorFn = (
   next: HttpHandlerFn
 ): Observable<HttpEvent<unknown>> => {
   const authService = inject(AuthService);
-  const token: string | null = authService.obtenerToken();
+  const token: string | null = authService.obtenerTokenAcceso();
 
   // Clonar la petición e inyectar el header Authorization si hay token
   const peticionAutenticada: HttpRequest<unknown> = token
@@ -33,7 +33,7 @@ export const authInterceptor: HttpInterceptorFn = (
     catchError((error: HttpErrorResponse) => {
       // Si el backend responde 401, la sesión expiró o el token es inválido
       if (error.status === 401) {
-        authService.logout();
+        authService.cerrarSesion();
       }
       return throwError(() => error);
     })

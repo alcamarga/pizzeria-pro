@@ -17,6 +17,14 @@
         🍽️ Menú
       </a>
 
+      <!-- Icono carrito con badge -->
+      <a routerLink="/carrito" routerLinkActive="link-activo" class="navbar-link carrito-link">
+        🛒 Carrito
+        @if (totalArticulos() > 0) {
+          <span class="badge-carrito">{{ totalArticulos() }}</span>
+        }
+      </a>
+
       <!-- Solo visible si está autenticado -->
       <a *ngIf="authService.estaAutenticado()"
          routerLink="/mis-pedidos"

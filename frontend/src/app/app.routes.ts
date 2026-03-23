@@ -4,6 +4,7 @@ import { RegistroComponent } from './components/registro/registro.component';
 import { PizzaListComponent } from './components/pizza-list/pizza-list.component';
 import { MisPedidosComponent } from './components/mis-pedidos/mis-pedidos.component';
 import { authGuard } from './guards/auth.guard';
+import { CartComponent } from './components/cart/cart.component';
 
 export const routes: Routes = [
   { path: '',            redirectTo: 'pizzas', pathMatch: 'full' },
@@ -11,5 +12,6 @@ export const routes: Routes = [
   { path: 'registro',    component: RegistroComponent },
   { path: 'pizzas',      component: PizzaListComponent },
   { path: 'mis-pedidos', component: MisPedidosComponent, canActivate: [authGuard] },
-  { path: 'pedido',      component: PizzaListComponent,  canActivate: [authGuard] }
+  { path: 'pedido',      component: PizzaListComponent,  canActivate: [authGuard] },
+  { path: 'carrito',    component: CartComponent }
 ];

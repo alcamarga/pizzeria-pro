@@ -7,7 +7,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
-import { RegistroPayload } from '../../models/usuario';
+import { RegistroCargaUtil } from '../../models/usuario';
 
 @Component({
   selector: 'app-registro',
@@ -46,14 +46,14 @@ export class RegistroComponent {
     this.enviando     = true;
     this.errorMensaje = null;
 
-    const payload: RegistroPayload = this.formulario.value as RegistroPayload;
+    const payload: RegistroCargaUtil = this.formulario.value as RegistroCargaUtil;
 
-    this.auth.registrar(payload).subscribe({
+    this.auth.registrarUsuario(payload).subscribe({
       next: () => {
         this.enviando = false;
         this.router.navigate(['/pizzas']);
       },
-      error: (err) => {
+      error: (err: { status: number }) => {
         this.enviando     = false;
         this.errorMensaje = err.status === 409
           ? 'Este correo ya está registrado. Intenta iniciar sesión.'

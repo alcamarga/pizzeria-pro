@@ -116,3 +116,25 @@
   background: #e64a19;
   color: #fff;
 }
+
+/* Badge del carrito */
+.carrito-link {
+  position: relative;
+}
+
+.badge-carrito {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #e17055;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+}

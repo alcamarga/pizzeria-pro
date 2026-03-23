@@ -1,0 +1,33 @@
+<div class="contenedor-carrito">
+  <h2>🍕 Tu Pedido</h2>
+
+  @if (listaArticulos().length > 0) {
+    <div class="lista-articulos">
+      @for (articulo of listaArticulos(); track $index) {
+        <div class="articulo">
+          <div class="info-articulo">
+            <span class="nombre-pizza">Pizza #{{ articulo.pizzaId }}</span>
+            <span class="detalle">Cantidad: {{ articulo.cantidad }}</span>
+          </div>
+          <div class="precio">{{ articulo.precioUnitario | currency:'COP':'$':'1.0-0' }}</div>
+          <button class="btn-eliminar" (click)="quitarArticulo($index)">✕</button>
+        </div>
+      }
+    </div>
+
+    <div class="resumen">
+      <div class="total">
+        <span>Total:</span>
+        <span>{{ totalCarrito() | currency:'COP':'$':'1.0-0' }}</span>
+      </div>
+    </div>
+
+    <button class="btn-confirmar" (click)="confirmarPedido()">Confirmar Compra</button>
+
+  } @else {
+    <div style="text-align: center; padding: 40px;">
+      <p style="font-size: 1.2rem; color: #b2bec3;">Tu carrito está vacío 🛒</p>
+      <a routerLink="/" style="color: #e17055; text-decoration: none; font-weight: bold;">Volver al menú</a>
+    </div>
+  }
+</div>

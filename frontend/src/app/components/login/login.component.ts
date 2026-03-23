@@ -7,7 +7,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
-import { LoginPayload } from '../../models/usuario';
+import { LoginCargaUtil } from '../../models/usuario';
 
 @Component({
   selector: 'app-login',
@@ -44,14 +44,14 @@ export class LoginComponent {
     this.enviando     = true;
     this.errorMensaje = null;
 
-    const payload: LoginPayload = this.formulario.value as LoginPayload;
+    const payload: LoginCargaUtil = this.formulario.value as LoginCargaUtil;
 
-    this.auth.login(payload).subscribe({
+    this.auth.iniciarSesion(payload).subscribe({
       next: () => {
         this.enviando = false;
         this.router.navigate(['/pizzas']);
       },
-      error: (err) => {
+      error: (err: { status: number }) => {
         this.enviando     = false;
         this.errorMensaje = err.status === 401
           ? 'Credenciales incorrectas. Verifica tu email y contraseña.'

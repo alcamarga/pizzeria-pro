@@ -1,31 +1,24 @@
 ## Creado por: Camilo Martinez
-## Fecha: 21/03/2026
-## Version: 2.0
+## Fecha: 23/03/2026
+## Version: 4.1
 """Modelos SQLAlchemy para la base de datos de Pizzería Pro.
 
-Define las tablas Pedido, ItemPedido y Usuario.
-La base de datos se guarda en backend/pizzeria.db (SQLite).
+Define las tablas usuarios, pedidos e items_pedido.
+Uso de Tipado Fuerte y nomenclatura en ESPAÑOL según Estándares Base.
 """
 
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
+from typing import Dict, List, Any
 
 # Instancia compartida de SQLAlchemy
 db: SQLAlchemy = SQLAlchemy()
 
 
 class Usuario(db.Model):
-    """Modelo de la tabla usuarios.
-
-    Attributes:
-        id: Identificador único autoincremental
-        nombre: Nombre completo del usuario
-        email: Correo electrónico único
-        contrasena_hash: Hash bcrypt de la contraseña
-        rol: Rol del usuario ('cliente' o 'admin')
-        fecha_registro: Fecha y hora de creación de la cuenta
-    """
-    __tablename__ = 'usuarios'
+    """Modelo de la tabla usuarios para gestión de accesos y roles."""
+    
+    __tablename__: str = 'usuarios'
 
     id: int = db.Column(db.Integer, primary_key=True, autoincrement=True)
     nombre: str = db.Column(db.String(100), nullable=False)
@@ -33,50 +26,51 @@ class Usuario(db.Model):
     contrasena_hash: str = db.Column(db.String(256), nullable=False)
     rol: str = db.Column(db.String(20), nullable=False, default='cliente')
     fecha_registro: str = db.Column(
-        db.String(20), nullable=False,
+        db.String(20), 
+        nullable=False,
         default=lambda: datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     )
 
-    def serializar(self) -> dict:
-        """Convierte el usuario a diccionario para respuesta JSON (sin hash)."""
+    def serializar(self) -> Dict[str, Any]:
+        """Convierte la instancia de usuario a un diccionario para respuestas JSON."""
         return {
             'id': self.id,
             'nombre': self.nombre,
             'email': self.email,
-            'rol': self.rol
+            'rol': self.rol,
+            'fecha_registro': self.fecha_registro
         }
 
 
 class Pedido(db.Model):
-    """Modelo de la tabla pedidos.
-
-    Attributes:
-        id: Identificador único autoincremental
-        fecha_hora: Fecha y hora de creación del pedido
-        subtotal: Monto sin IVA
-        iva: IVA calculado (19%)
-        total: Monto total con IVA
-        items: Relación con los items del pedido
-    """
-    __tablename__ = 'pedidos'
+    """Modelo de la tabla pedidos para registrar transacciones de venta."""
+    
+    __tablename__: str = 'pedidos'
 
     id: int = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    fecha_hora: str = db.Column(db.String(20), nullable=False,
-                                default=lambda: datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+    fecha_hora: str = db.Column(
+        db.String(20), 
+        nullable=False,
+        default=lambda: datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    )
     subtotal: float = db.Column(db.Float, nullable=False, default=0.0)
     iva: float = db.Column(db.Float, nullable=False, default=0.0)
     total: float = db.Column(db.Float, nullable=False, default=0.0)
 
     # Relación uno-a-muchos con ItemPedido
-    items = db.relationship('ItemPedido', backref='pedido',
-                            lazy=True, cascade='all, delete-orphan')
+    articulos = db.relationship(
+        'ItemPedido', 
+        backref='pedido_relacionado',
+        lazy=True, 
+        cascade='all, delete-orphan'
+    )
 
-    def serializar(self) -> dict:
-        """Convierte el pedido a diccionario para respuesta JSON."""
+    def serializar(self) -> Dict[str, Any]:
+        """Convierte el pedido y sus artículos a formato de diccionario."""
         return {
             'id': self.id,
             'fecha_hora': self.fecha_hora,
-            'items': [item.serializar() for item in self.items],
+            'articulos': [articulo.serializar() for articulo in self.articulos],
             'subtotal': round(self.subtotal, 2),
             'iva': round(self.iva, 2),
             'total': round(self.total, 2)
@@ -84,17 +78,9 @@ class Pedido(db.Model):
 
 
 class ItemPedido(db.Model):
-    """Modelo de la tabla items_pedido.
-
-    Attributes:
-        id: Identificador único autoincremental
-        pedido_id: Clave foránea al pedido padre
-        nombre: Nombre de la pizza
-        tamano: Tamaño seleccionado
-        cantidad: Cantidad de unidades
-        precio: Precio unitario al momento del pedido
-    """
-    __tablename__ = 'items_pedido'
+    """Modelo de la tabla items_pedido para el desglose de cada orden."""
+    
+    __tablename__: str = 'items_pedido'
 
     id: int = db.Column(db.Integer, primary_key=True, autoincrement=True)
     pedido_id: int = db.Column(db.Integer, db.ForeignKey('pedidos.id'), nullable=False)
@@ -103,8 +89,8 @@ class ItemPedido(db.Model):
     cantidad: int = db.Column(db.Integer, nullable=False, default=1)
     precio: float = db.Column(db.Float, nullable=False, default=0.0)
 
-    def serializar(self) -> dict:
-        """Convierte el item a diccionario para respuesta JSON."""
+    def serializar(self) -> Dict[str, Any]:
+        """Convierte el detalle del artículo a formato de diccionario."""
         return {
             'nombre': self.nombre,
             'tamano': self.tamano,
