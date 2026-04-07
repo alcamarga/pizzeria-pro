@@ -9,7 +9,8 @@ API REST con persistencia en SQLite via Flask-SQLAlchemy y autenticación JWT.
 import os
 import jwt as pyjwt
 from datetime import datetime, timedelta, timezone
-from flask import Flask, jsonify, request, Response
+from functools import wraps
+from flask import Flask, jsonify, request, Response, g
 from flask_cors import CORS
 from werkzeug.security import generate_password_hash, check_password_hash
 from database import db, Pedido, ItemPedido, Usuario
@@ -46,10 +47,57 @@ def agregar_headers_cors(respuesta: Response) -> Response:
     respuesta.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
     return respuesta
 
+
+def _extraer_token_bearer() -> str | None:
+    """Extrae el token JWT desde el header Authorization: Bearer <token>."""
+    encabezado: str = request.headers.get("Authorization", "")
+    partes: list[str] = encabezado.split()
+    if len(partes) == 2 and partes[0].lower() == "bearer":
+        return partes[1]
+    return None
+
+
+def requiere_autenticacion(func):
+    """Protege endpoints exigiendo JWT válido en el header Authorization."""
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        # Permitir preflight CORS sin token (el navegador no adjunta Authorization).
+        if request.method == "OPTIONS":
+            return Response(status=204)
+
+        token: str | None = _extraer_token_bearer()
+        if not token:
+            return jsonify({"error": "Token requerido"}), 401
+
+        try:
+            carga_util: dict = pyjwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+        except pyjwt.ExpiredSignatureError:
+            return jsonify({"error": "Token expirado"}), 401
+        except pyjwt.InvalidTokenError:
+            return jsonify({"error": "Token invalido"}), 401
+
+        # Guardar info mínima para uso futuro (roles, email, etc.)
+        g.jwt = carga_util
+        return func(*args, **kwargs)
+
+    return wrapper
+
 # Inicialización de base de datos y usuario maestro
 with app.app_context():
     db.create_all()
     print(f"[INFO] Base de datos lista: {RUTA_DB}")
+
+    # Migración ligera: si la DB ya existía sin usuario_id, lo agregamos.
+    try:
+        with db.engine.connect() as conn:
+            columnas = [fila[1] for fila in conn.exec_driver_sql("PRAGMA table_info(pedidos);").fetchall()]
+            if "usuario_id" not in columnas:
+                conn.exec_driver_sql("ALTER TABLE pedidos ADD COLUMN usuario_id INTEGER;")
+                print("[INFO] Migracion aplicada: pedidos.usuario_id")
+    except Exception as exc:
+        # No bloqueamos el arranque; en entornos gestionados puede haber restricciones.
+        print(f"[WARN] No se pudo verificar/aplicar migracion usuario_id: {exc}")
 
     if not Usuario.query.filter_by(email='admin@pizzeria.com').first():
         admin: Usuario = Usuario(
@@ -172,6 +220,7 @@ def obtener_pizzas() -> Response:
 
 
 @app.route('/api/pedidos', methods=['POST'])
+@requiere_autenticacion
 def recibir_pedido() -> tuple[Response, int]:
     """Procesa y guarda un nuevo pedido de pizza."""
     datos: dict = request.get_json()
@@ -181,7 +230,13 @@ def recibir_pedido() -> tuple[Response, int]:
     subtotal: float = round(total_recibido / 1.19, 2)
     iva: float = round(total_recibido - subtotal, 2)
 
-    nuevo_pedido: Pedido = Pedido(subtotal=subtotal, iva=iva, total=total_recibido)
+    usuario_id: int | None = None
+    try:
+        usuario_id = int(g.jwt.get("sub")) if g.jwt.get("sub") is not None else None
+    except (TypeError, ValueError):
+        usuario_id = None
+
+    nuevo_pedido: Pedido = Pedido(usuario_id=usuario_id, subtotal=subtotal, iva=iva, total=total_recibido)
     db.session.add(nuevo_pedido)
     db.session.flush()
 
@@ -200,9 +255,21 @@ def recibir_pedido() -> tuple[Response, int]:
 
 
 @app.route('/api/pedidos', methods=['GET'])
+@requiere_autenticacion
 def listar_pedidos() -> Response:
-    """Lista todos los pedidos para el panel administrativo."""
-    pedidos_db: list[Pedido] = Pedido.query.order_by(Pedido.id.desc()).all()
+    """Lista pedidos (admin: todos, cliente: solo propios)."""
+    rol: str = str(g.jwt.get("rol", "cliente"))
+    usuario_id: int | None = None
+    try:
+        usuario_id = int(g.jwt.get("sub")) if g.jwt.get("sub") is not None else None
+    except (TypeError, ValueError):
+        usuario_id = None
+
+    consulta = Pedido.query
+    if rol != "admin":
+        consulta = consulta.filter(Pedido.usuario_id == usuario_id)
+
+    pedidos_db: list[Pedido] = consulta.order_by(Pedido.id.desc()).all()
     return jsonify({
         "pedidos": [p.serializar() for p in pedidos_db],
         "total_pedidos": len(pedidos_db)

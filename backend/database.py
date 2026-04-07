@@ -48,6 +48,7 @@ class Pedido(db.Model):
     __tablename__: str = 'pedidos'
 
     id: int = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    usuario_id: int | None = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=True)
     fecha_hora: str = db.Column(
         db.String(20), 
         nullable=False,
@@ -69,6 +70,7 @@ class Pedido(db.Model):
         """Convierte el pedido y sus artículos a formato de diccionario."""
         return {
             'id': self.id,
+            'usuario_id': self.usuario_id,
             'fecha_hora': self.fecha_hora,
             'articulos': [articulo.serializar() for articulo in self.articulos],
             'subtotal': round(self.subtotal, 2),
