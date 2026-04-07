@@ -9,6 +9,7 @@ import { environment } from '../../environments/environment';
 
 const URL_API_PIZZAS: string = `${environment.apiUrl}/pizzas`;
 const URL_API_PEDIDOS: string = `${environment.apiUrl}/pedidos`;
+const URL_API_MIS_PEDIDOS: string = `${environment.apiUrl}/pedidos/mis`;
 
 export interface ArticuloHistorial {
   nombre: string;
@@ -62,8 +63,16 @@ export class PizzaService {
     return this.http.post<RespuestaEnvioPedido>(URL_API_PEDIDOS, cuerpoPedido);
   }
 
-  obtenerHistorialDeVentas(): Observable<RegistroPedido[]> {
+  /** Panel admin: todos los pedidos (requiere JWT con rol admin). */
+  obtenerHistorialVentasAdmin(): Observable<RegistroPedido[]> {
     return this.http.get<RespuestaHistorial>(URL_API_PEDIDOS).pipe(
+      map((respuesta: RespuestaHistorial) => respuesta.pedidos)
+    );
+  }
+
+  /** Historial del usuario autenticado. */
+  obtenerMisPedidos(): Observable<RegistroPedido[]> {
+    return this.http.get<RespuestaHistorial>(URL_API_MIS_PEDIDOS).pipe(
       map((respuesta: RespuestaHistorial) => respuesta.pedidos)
     );
   }

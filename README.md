@@ -1,7 +1,7 @@
 # 🍕 Pizzería Pro — FullStack
 
 **Autor:** Camilo Martinez
-**Versión:** 5.1
+**Versión:** 5.2
 **Fecha:** 23/03/2026
 
 Aplicación fullstack desacoplada para gestión de pedidos de pizzería. Backend en **Python/Flask** con autenticación **JWT** y base de datos **SQLite**. Frontend en **Angular 18+** con arquitectura standalone, Signals para manejo de estado reactivo, diseño **Glassmorphism** y protección de rutas con **AuthGuard**.
@@ -168,8 +168,11 @@ export const environment = {
 | `GET` | `/api/pizzas` | No | Lista de pizzas |
 | `POST` | `/api/auth/registro` | No | Registro de usuario |
 | `POST` | `/api/auth/login` | No | Login, devuelve JWT |
-| `POST` | `/api/pedidos` | JWT | Guardar pedido |
-| `GET` | `/api/pedidos` | JWT | Historial de pedidos |
+| `POST` | `/api/pedidos` | JWT | Crear pedido (asociado al usuario del token) |
+| `GET` | `/api/pedidos` | JWT **admin** | Historial global (panel administración) |
+| `GET` | `/api/pedidos/mis` | JWT | Historial del usuario autenticado |
+
+El frontend usa `GET /api/pedidos` solo en el panel admin (`pizza-list` con rol `admin`) y `GET /api/pedidos/mis` en **Mis pedidos**.
 
 ---
 

@@ -162,7 +162,7 @@ export class PizzaListComponent implements OnInit, OnDestroy, AfterViewInit {
 
   cargarHistorial(): void {
     this.cargandoHistorial = true;
-    this.pizzaService.obtenerHistorialDeVentas().subscribe({
+    this.pizzaService.obtenerHistorialVentasAdmin().subscribe({
       next: (pedidos: RegistroPedido[]) => {
         this.historial = pedidos.slice().reverse();
         this.cargandoHistorial = false;

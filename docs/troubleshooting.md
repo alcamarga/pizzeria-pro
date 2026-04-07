@@ -7,6 +7,10 @@
 - Si el token expiró, vuelve a hacer login.
 - Si cambiaste `JWT_SECRET` en backend, tokens antiguos dejan de ser válidos.
 
+## 403 Forbidden en `GET /api/pedidos`
+
+- Ese endpoint es **solo para administradores**. Los clientes deben usar `GET /api/pedidos/mis`.
+
 ## Error CORS en el navegador
 
 - Confirma que el backend está corriendo y accesible.

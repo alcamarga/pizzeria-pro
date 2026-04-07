@@ -21,7 +21,7 @@ export class MisPedidosComponent implements OnInit {
   error: string | null        = null;
 
   ngOnInit(): void {
-    this.pizzaService.obtenerHistorialDeVentas().subscribe({
+    this.pizzaService.obtenerMisPedidos().subscribe({
       next: (pedidos: RegistroPedido[]) => {
         this.pedidos  = pedidos;
         this.cargando = false;

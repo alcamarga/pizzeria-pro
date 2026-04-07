@@ -57,28 +57,48 @@ def _extraer_token_bearer() -> str | None:
     return None
 
 
+def _resolver_jwt() -> Response | tuple[Response, int] | None:
+    """Valida JWT y deja la carga en g.jwt. None = OK. Si no es OK, devuelve respuesta HTTP."""
+    if request.method == "OPTIONS":
+        return Response(status=204)
+
+    token: str | None = _extraer_token_bearer()
+    if not token:
+        return jsonify({"error": "Token requerido"}), 401
+
+    try:
+        g.jwt = pyjwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+    except pyjwt.ExpiredSignatureError:
+        return jsonify({"error": "Token expirado"}), 401
+    except pyjwt.InvalidTokenError:
+        return jsonify({"error": "Token invalido"}), 401
+
+    return None
+
+
 def requiere_autenticacion(func):
     """Protege endpoints exigiendo JWT válido en el header Authorization."""
 
     @wraps(func)
     def wrapper(*args, **kwargs):
-        # Permitir preflight CORS sin token (el navegador no adjunta Authorization).
-        if request.method == "OPTIONS":
-            return Response(status=204)
+        fallo = _resolver_jwt()
+        if fallo is not None:
+            return fallo
+        return func(*args, **kwargs)
 
-        token: str | None = _extraer_token_bearer()
-        if not token:
-            return jsonify({"error": "Token requerido"}), 401
+    return wrapper
 
-        try:
-            carga_util: dict = pyjwt.decode(token, JWT_SECRET, algorithms=["HS256"])
-        except pyjwt.ExpiredSignatureError:
-            return jsonify({"error": "Token expirado"}), 401
-        except pyjwt.InvalidTokenError:
-            return jsonify({"error": "Token invalido"}), 401
 
-        # Guardar info mínima para uso futuro (roles, email, etc.)
-        g.jwt = carga_util
+def requiere_admin(func):
+    """Exige JWT válido y rol admin."""
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        fallo = _resolver_jwt()
+        if fallo is not None:
+            return fallo
+        if str(g.jwt.get("rol", "")) != "admin":
+            return jsonify({"error": "Se requiere rol administrador"}), 403
         return func(*args, **kwargs)
 
     return wrapper
@@ -255,21 +275,31 @@ def recibir_pedido() -> tuple[Response, int]:
 
 
 @app.route('/api/pedidos', methods=['GET'])
-@requiere_autenticacion
+@requiere_admin
 def listar_pedidos() -> Response:
-    """Lista pedidos (admin: todos, cliente: solo propios)."""
-    rol: str = str(g.jwt.get("rol", "cliente"))
+    """Historial global de pedidos (solo administradores)."""
+    pedidos_db: list[Pedido] = Pedido.query.order_by(Pedido.id.desc()).all()
+    return jsonify({
+        "pedidos": [p.serializar() for p in pedidos_db],
+        "total_pedidos": len(pedidos_db)
+    })
+
+
+@app.route('/api/pedidos/mis', methods=['GET'])
+@requiere_autenticacion
+def listar_mis_pedidos() -> Response:
+    """Historial de pedidos del usuario autenticado."""
     usuario_id: int | None = None
     try:
         usuario_id = int(g.jwt.get("sub")) if g.jwt.get("sub") is not None else None
     except (TypeError, ValueError):
         usuario_id = None
 
-    consulta = Pedido.query
-    if rol != "admin":
-        consulta = consulta.filter(Pedido.usuario_id == usuario_id)
-
-    pedidos_db: list[Pedido] = consulta.order_by(Pedido.id.desc()).all()
+    pedidos_db: list[Pedido] = (
+        Pedido.query.filter(Pedido.usuario_id == usuario_id)
+        .order_by(Pedido.id.desc())
+        .all()
+    )
     return jsonify({
         "pedidos": [p.serializar() for p in pedidos_db],
         "total_pedidos": len(pedidos_db)

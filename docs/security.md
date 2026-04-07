@@ -8,10 +8,9 @@
 
 ## Endpoints privados
 
-Actualmente requieren token:
-
-- `POST /api/pedidos`
-- `GET /api/pedidos`
+- `POST /api/pedidos`: JWT (cualquier usuario autenticado)
+- `GET /api/pedidos/mis`: JWT (historial propio)
+- `GET /api/pedidos`: JWT **y** rol `admin` (historial global)
 
 ## CORS
 
